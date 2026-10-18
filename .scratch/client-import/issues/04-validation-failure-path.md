@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Steps 2 and 3 show a step label, a filling progress bar and a percentage; the stepper is not shown on the first screen
-- [ ] A Validation Failure shows the total issue count and errors grouped by rule, with the affected rows and offending values
-- [ ] Each group shows its first ten rows, with "Show N more rows" revealing the rest
-- [ ] The screen says to correct the rows and upload again, and that nothing was created
-- [ ] The progress bar is red on this screen
-- [ ] "Back to file upload" returns to the very beginning, including the Advisor
-- [ ] Tests cover each of the above through the modal, using a fake that returns a Validation Failure
+- [x] Steps 2 and 3 show a step label, a filling progress bar and a percentage; the stepper is not shown on the first screen
+- [x] A Validation Failure shows the total issue count and errors grouped by rule, with the affected rows and offending values
+- [x] Each group shows its first ten rows, with "Show N more rows" revealing the rest
+- [x] The screen says to correct the rows and upload again, and that nothing was created
+- [x] The progress bar is red on this screen
+- [x] "Back to file upload" returns to the very beginning, including the Advisor
+- [x] Tests cover each of the above through the modal, using a fake that returns a Validation Failure

@@ -1,3 +1,4 @@
+import { checkImportFile } from '../import/checks';
 import type { Advisor, ImportService } from '../import/types';
 
 export const SARAH: Advisor = { id: 's1', name: 'Sarah Brown', email: 'sarah.brown@example.com', office: 'RETAIL - TTN' };
@@ -9,7 +10,7 @@ export function createFakeService(overrides: Partial<ImportService> = {}): Impor
   return {
     searchAdvisors: async (query) =>
       FAKE_ADVISORS.filter((a) => a.name.toLowerCase().includes(query.trim().toLowerCase())),
-    validate: async () => ({ ok: true, rows: 3 }),
+    validate: async (file) => checkImportFile(await file.text()),
     create: async (_file, _advisor, rows) => ({ created: rows, failed: [] }),
     ...overrides,
   };

@@ -17,7 +17,7 @@ const errors: RuleError[] = [
 
 async function reachValidationFailure() {
   const create = vi.fn(async () => ({ created: 0, failed: [] }));
-  const service = createFakeService({ validate: async () => ({ ok: false, errors }), create });
+  const service = createFakeService({ validate: async () => ({ ok: false, check: 'format', errors }), create });
   const view = renderClientsPage({ service });
   await openAsSarah(view.user);
   await addFile(view.user, csv());
@@ -35,13 +35,13 @@ describe('Validation Failure', () => {
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
     await advance(750);
-    expect(screen.getByText(/Step 2 of 5: File format check \(\d+% complete\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Step 2 of 5: File check \(\d+% complete\)/)).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
-    expect(screen.getByText('Checking the file format…')).toBeInTheDocument();
+    expect(screen.getByText('Checking the file…')).toBeInTheDocument();
 
     await advance(1000);
-    expect(screen.getByText(/Step 3 of 5: External data validation/)).toBeInTheDocument();
-    expect(screen.getByText('Checking for conflicting data…')).toBeInTheDocument();
+    expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
+    expect(screen.getByText('Checking the format…')).toBeInTheDocument();
   });
 
   it('reports every problem grouped by rule, with the total and the offending values', async () => {
@@ -87,7 +87,7 @@ describe('Validation Failure', () => {
   });
 
   it('also clears an Advisor picked by hand when going back', async () => {
-    const service = createFakeService({ validate: async () => ({ ok: false, errors }) });
+    const service = createFakeService({ validate: async () => ({ ok: false, check: 'format', errors }) });
     const { user } = renderClientsPage({ service });
     await user.click(screen.getByRole('button', { name: 'Client Import' }));
     await user.type(screen.getByLabelText('Advisor search'), 'valerie');

@@ -4,10 +4,9 @@ import { ADVISORS, createMockImportService } from './import/mockApi';
 import type { Scenario } from './import/types';
 
 const SCENARIOS: { value: Scenario; label: string }[] = [
-  { value: 'auto', label: 'By filename (bad… / partial… / else success)' },
+  { value: 'auto', label: 'By filename (partial… / else success)' },
   { value: 'success', label: 'Success' },
   { value: 'partial', label: 'Partial success' },
-  { value: 'invalid', label: 'Validation failure' },
 ];
 
 export function App() {

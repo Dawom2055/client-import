@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addFile, csv, dropFile, openAsSarah } from '../test/flows';
+import { addFile, captureDownload, csv, dropFile, HEADER, openAsSarah } from '../test/flows';
 import { renderClientsPage } from '../test/render';
 
 afterEach(() => {
@@ -14,6 +14,14 @@ describe('adding a file', () => {
     expect(screen.getAllByRole('button', { name: /Download .*Template/ })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Download Import Template' })).toBeInTheDocument();
     expect(screen.queryByText(/companion template/i)).not.toBeInTheDocument();
+  });
+
+  it('downloads an Import Template with exactly First Name, Last Name and Email Address', async () => {
+    const { user } = renderClientsPage();
+    await openAsSarah(user);
+    const download = captureDownload();
+    await user.click(screen.getByRole('button', { name: 'Download Import Template' }));
+    expect((await download.text()).trim()).toBe(HEADER);
   });
 
   it('accepts a CSV chosen with browse and shows its name and "Ready to import"', async () => {

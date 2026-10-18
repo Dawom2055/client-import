@@ -1,3 +1,4 @@
+import { checkImportFile } from './checks';
 import type { Advisor, ImportService, Scenario } from './types';
 
 export const ADVISORS: Advisor[] = [
@@ -9,24 +10,15 @@ export const ADVISORS: Advisor[] = [
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function countRows(file: File): Promise<number> {
-  const text = await file.text();
-  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
-  return Math.max(1, lines.length - 1);
-}
-
-const INVALID_EMAIL_ROWS = [3, 8, 12, 14, 15, 17, 19, 21, 23, 25, 27, 30];
-
 function pickScenario(file: File, scenario: Scenario): Exclude<Scenario, 'auto'> {
   if (scenario !== 'auto') return scenario;
   const name = file.name.toLowerCase();
-  if (/bad|invalid/.test(name)) return 'invalid';
   if (/partial/.test(name)) return 'partial';
   return 'success';
 }
 
 /**
- * Stand-in for the Clients service. Validation rules are placeholders.
+ * Stand-in for the Clients service. Validation runs the real checks; creation is simulated.
  * Typing "error" as an advisor search simulates a failed lookup.
  */
 export function createMockImportService(getScenario: () => Scenario): ImportService {
@@ -39,17 +31,7 @@ export function createMockImportService(getScenario: () => Scenario): ImportServ
     },
 
     async validate(file) {
-      if (pickScenario(file, getScenario()) === 'invalid') {
-        return {
-          ok: false,
-          errors: [
-            { rule: 'Email must be a valid email address.', rows: INVALID_EMAIL_ROWS.map((row) => ({ row, value: 'jane.doe@' })) },
-            { rule: 'First name is required.', rows: [{ row: 9 }] },
-            { rule: 'Last name is required.', rows: [{ row: 11 }, { row: 16 }] },
-          ],
-        };
-      }
-      return { ok: true, rows: await countRows(file) };
+      return checkImportFile(await file.text());
     },
 
     async create(file, _advisor, rows) {

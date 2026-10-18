@@ -16,7 +16,16 @@ export interface FailedRecord {
   reason: string;
 }
 
-export type ValidationResult = { ok: true; rows: number } | { ok: false; errors: RuleError[] };
+export interface ImportClient {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+/** Which of the two checks failed: the File check (Step 2) or the Format check (Step 3). */
+export type Check = 'file' | 'format';
+
+export type ValidationResult = { ok: true; clients: ImportClient[] } | { ok: false; check: Check; errors: RuleError[] };
 
 export interface CreateResult {
   created: number;
@@ -31,12 +40,12 @@ export interface ImportService {
   create(file: File, advisor: Advisor, rows: number): Promise<CreateResult>;
 }
 
-export type Scenario = 'auto' | 'success' | 'partial' | 'invalid';
+export type Scenario = 'auto' | 'success' | 'partial';
 
 export type Phase =
   | 'select'
+  | 'file'
   | 'format'
-  | 'external'
   | 'confirm'
   | 'create'
   | 'invalid'

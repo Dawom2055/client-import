@@ -70,7 +70,8 @@ function ErrorGroup({ error }: { error: RuleError }) {
 }
 
 export function InvalidScreen({ errors, onBack }: { errors: RuleError[]; onBack: () => void }) {
-  const total = errors.reduce((n, e) => n + e.rows.length, 0);
+  // A rule with no rows is a problem with the file itself and counts as one issue.
+  const total = errors.reduce((n, e) => n + Math.max(1, e.rows.length), 0);
   return (
     <>
       <div className="status-line danger" role="alert">

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-human
+**Status:** wontfix (superseded by .scratch/client-import-csv-checks)
 
 - [ ] A step 2 frame consistent with the existing step 3 frame
 - [ ] A step 4 confirm frame stating the Client count and the Advisor

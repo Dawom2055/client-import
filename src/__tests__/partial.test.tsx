@@ -15,7 +15,10 @@ const failed = [
 
 async function reachPartialSuccess() {
   const service = createFakeService({
-    validate: async () => ({ ok: true, rows: 5 }),
+    validate: async () => ({
+      ok: true,
+      clients: Array.from({ length: 5 }, (_, i) => ({ firstName: 'Jane', lastName: 'Doe', email: `jane${i}@example.com` })),
+    }),
     create: async () => ({ created: 3, failed }),
   });
   const view = renderClientsPage({ service });

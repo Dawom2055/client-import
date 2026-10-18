@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AdvisorSearch } from './AdvisorSearch';
 import { Dropzone } from './Dropzone';
 import { ConfirmScreen, InvalidScreen, PartialScreen, RunningScreen, SuccessScreen } from './screens';
-import type { Advisor, CreateResult, ImportService, Phase, RuleError, ValidationResult } from './types';
+import type { Advisor, Check, CreateResult, ImportService, Phase, RuleError, ValidationResult } from './types';
 
 interface Props {
   initialAdvisor: Advisor | null;
@@ -10,24 +10,25 @@ interface Props {
   onClose: () => void;
 }
 
-const STEP: Record<Exclude<Phase, 'select'>, { n: number; label: string }> = {
-  format: { n: 2, label: 'File format check' },
-  external: { n: 3, label: 'External data validation' },
+const STEP: Record<Exclude<Phase, 'select' | 'invalid'>, { n: number; label: string }> = {
+  file: { n: 2, label: 'File check' },
+  format: { n: 3, label: 'Format check' },
   confirm: { n: 4, label: 'Confirm' },
   create: { n: 5, label: 'Finalize and upload' },
-  invalid: { n: 3, label: 'External data validation' },
   success: { n: 5, label: 'Finalize and upload' },
   partial: { n: 5, label: 'Finalize and upload' },
 };
 
-const RUN_MS: Partial<Record<Phase, number>> = { format: 1500, external: 2600, create: 2800 };
+const CHECK_STEP = { file: STEP.file, format: STEP.format } satisfies Record<Check, unknown>;
+
+const RUN_MS: Partial<Record<Phase, number>> = { file: 1500, format: 2600, create: 2800 };
 const RUN_TEXT: Partial<Record<Phase, string>> = {
-  format: 'Checking the file format…',
-  external: 'Checking for conflicting data…',
+  file: 'Checking the file…',
+  format: 'Checking the format…',
   create: 'Creating clients…',
 };
 
-const TEMPLATE = 'First name,Last name,Email\n';
+const TEMPLATE = 'First Name,Last Name,Email Address\n';
 
 function downloadTemplate() {
   const url = URL.createObjectURL(new Blob([TEMPLATE], { type: 'text/csv' }));
@@ -44,6 +45,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState(0);
   const [errors, setErrors] = useState<RuleError[]>([]);
+  const [failedCheck, setFailedCheck] = useState<Check>('file');
   const [result, setResult] = useState<CreateResult | null>(null);
   const [pct, setPct] = useState(0);
   const dialog = useRef<HTMLDivElement>(null);
@@ -85,17 +87,18 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
       setPct(p);
       if (p < 100) return;
       clearInterval(id);
-      if (phase === 'format') {
-        setPhase('external');
-      } else if (phase === 'external') {
+      if (phase === 'file' || phase === 'format') {
         const outcome = await validation.current!;
         if (cancelled) return;
-        if (outcome.ok) {
-          setRows(outcome.rows);
-          setPhase('confirm');
-        } else {
+        if (!outcome.ok && outcome.check === phase) {
           setErrors(outcome.errors);
+          setFailedCheck(phase);
           setPhase('invalid');
+        } else if (phase === 'file') {
+          setPhase('format');
+        } else {
+          setRows(outcome.ok ? outcome.clients.length : 0);
+          setPhase('confirm');
         }
       } else {
         const outcome = await creation.current!;
@@ -113,7 +116,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
   const start = () => {
     if (!file) return;
     validation.current = service.validate(file);
-    setPhase('format');
+    setPhase('file');
   };
 
   const confirm = () => {
@@ -122,7 +125,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
     setPhase('create');
   };
 
-  const step = phase === 'select' ? null : STEP[phase];
+  const step = phase === 'select' ? null : phase === 'invalid' ? CHECK_STEP[failedCheck] : STEP[phase];
   const done = step ? step.n - 1 : 0;
   const fill =
     phase === 'success' || phase === 'partial'
@@ -199,7 +202,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
           </>
         )}
 
-        {(phase === 'format' || phase === 'external' || phase === 'create') && <RunningScreen message={RUN_TEXT[phase]!} />}
+        {(phase === 'file' || phase === 'format' || phase === 'create') && <RunningScreen message={RUN_TEXT[phase]!} />}
 
         {phase === 'confirm' && advisor && (
           <ConfirmScreen rows={rows} advisorName={advisor.name} onCancel={onClose} onConfirm={confirm} />

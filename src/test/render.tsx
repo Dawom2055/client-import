@@ -13,7 +13,7 @@ interface Options {
 /** Renders the Clients page with fake timers so timed import steps can be advanced by hand. */
 export function renderClientsPage({ role = 'admin', service = createFakeService() }: Options = {}) {
   vi.useFakeTimers({ shouldAdvanceTime: false });
-  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime, applyAccept: false });
   const view = render(<ClientsPage role={role} service={service} advisors={FAKE_ADVISORS} />);
   return { user, ...view };
 }

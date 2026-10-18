@@ -184,7 +184,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
               <span className="field-label">Clients</span>
               <p className="hint">Use the template for client names, contact details, and companions. One file covers both.</p>
               <button type="button" className="link-btn with-icon" onClick={downloadTemplate}>
-                ⤓ Download Import Template
+                <span aria-hidden>⤓</span> Download Import Template
               </button>
             </div>
             <Dropzone disabled={!advisor} file={file} onFile={setFile} />

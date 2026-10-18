@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] One "Download Import Template" link covers Clients and Companions; there is no record-type choice
-- [ ] A file that is not a .csv, or is over 5 MB, is refused inline with a message and is not added
-- [ ] An added file shows its real name and "Ready to import", with a Replace file action
-- [ ] Continue is disabled until both an Advisor and a file are present
-- [ ] Tests cover drag and drop, browse, refusal, replace and the Continue gate through the modal
+- [x] One "Download Import Template" link covers Clients and Companions; there is no record-type choice
+- [x] A file that is not a .csv, or is over 5 MB, is refused inline with a message and is not added
+- [x] An added file shows its real name and "Ready to import", with a Replace file action
+- [x] Continue is disabled until both an Advisor and a file are present
+- [x] Tests cover drag and drop, browse, refusal, replace and the Continue gate through the modal

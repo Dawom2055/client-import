@@ -45,6 +45,11 @@ export function ConfirmScreen({
   );
 }
 
+function rowLabel({ row, value, detail }: RuleError['rows'][number]) {
+  if (detail) return `Row ${row}: ${detail}`;
+  return value ? `Row ${row}: “${value}”` : `Row ${row}`;
+}
+
 function ErrorGroup({ error }: { error: RuleError }) {
   const [all, setAll] = useState(false);
   const shown = all ? error.rows : error.rows.slice(0, PREVIEW_ROWS);
@@ -54,10 +59,7 @@ function ErrorGroup({ error }: { error: RuleError }) {
       <p className="rule">{error.rule}</p>
       <ul>
         {shown.map((r) => (
-          <li key={r.row}>
-            <em>Row {r.row}</em>
-            {r.value ? <>: “{r.value}”</> : null}
-          </li>
+          <li key={`${r.row}-${r.detail ?? r.value ?? ''}`}>{rowLabel(r)}</li>
         ))}
       </ul>
       {hidden > 0 && (

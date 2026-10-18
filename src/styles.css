@@ -511,6 +511,7 @@ select {
 .rule-error ul {
   margin: 4px 0 0;
   padding-left: 20px;
+  font-style: italic;
 }
 .failed-list {
   margin: 10px 0 0;

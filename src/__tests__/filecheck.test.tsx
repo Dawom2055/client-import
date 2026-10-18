@@ -107,3 +107,82 @@ describe('File check: the file itself', () => {
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
   });
 });
+
+describe('File check: required fields', () => {
+  it('reports a blank required field with its row and column', async () => {
+    const { create } = await uploadAndCheck(
+      csvFile([HEADER, JANE, 'Jane,Doe,', ',Smith,smith@example.com', 'Ann,,ann@example.com']),
+    );
+    expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
+    expect(screen.getByText('Validation failed: 3 issues found in your file')).toBeInTheDocument();
+    expect(screen.getByText('Total errors: 3')).toBeInTheDocument();
+    expect(screen.getByText('Required fields missing')).toBeInTheDocument();
+    expect(screen.getByText('Row 3: Email Address')).toBeInTheDocument();
+    expect(screen.getByText('Row 4: First Name')).toBeInTheDocument();
+    expect(screen.getByText('Row 5: Last Name')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveClass('danger');
+    expect(create).not.toHaveBeenCalled();
+  });
+});
+
+describe('File check: duplicate Emails', () => {
+  it('reports every row that shares an Email, ignoring case and surrounding spaces', async () => {
+    const { create } = await uploadAndCheck(
+      csvFile([
+        HEADER,
+        'Jane,Doe,jane@example.com',
+        'Ann,Lee,ann@example.com',
+        'Janet,Dow,  JANE@Example.com ',
+        'Bob,Ray,bob@example.com',
+        'Jan,Dee,jane@example.com',
+      ]),
+    );
+    expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
+    expect(screen.getByText('Total errors: 3')).toBeInTheDocument();
+    expect(screen.getByText('Duplicate Email Address')).toBeInTheDocument();
+    expect(screen.getByText('Row 2: “jane@example.com”')).toBeInTheDocument();
+    expect(screen.getByText('Row 4: “JANE@Example.com”')).toBeInTheDocument();
+    expect(screen.getByText('Row 6: “jane@example.com”')).toBeInTheDocument();
+    expect(screen.queryByText(/ann@example.com/)).not.toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('accepts two different people with the same name but different Emails', async () => {
+    await uploadAndCheck(csvFile([HEADER, 'Jane,Doe,jane1@example.com', 'Jane,Doe,jane2@example.com']));
+    expectPassed();
+  });
+
+  it('reports required fields and duplicates together in one File check', async () => {
+    await uploadAndCheck(csvFile([HEADER, JANE, JANE, 'Ann,Lee,']));
+    expect(screen.getByText('Total errors: 3')).toBeInTheDocument();
+    expect(screen.getByText('Required fields missing')).toBeInTheDocument();
+    expect(screen.getByText('Duplicate Email Address')).toBeInTheDocument();
+  });
+
+  it('counts blank rows in the row numbers', async () => {
+    await uploadAndCheck(csvFile([HEADER, JANE, '', ',,', JANE]));
+    expect(screen.getByText('Row 2: “jane@example.com”')).toBeInTheDocument();
+    expect(screen.getByText('Row 5: “jane@example.com”')).toBeInTheDocument();
+  });
+});
+
+describe('File check: the error screen', () => {
+  const twelveDuplicates = () => csvFile([HEADER, ...Array.from({ length: 12 }, () => JANE)]);
+
+  it('shows ten rows per group and reveals the rest on request', async () => {
+    const { user } = await uploadAndCheck(twelveDuplicates());
+    expect(screen.getByText('Total errors: 12')).toBeInTheDocument();
+    expect(screen.getByText(/^Row 11:/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Row 12:/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show 2 more rows' }));
+    expect(screen.getByText(/^Row 13:/)).toBeInTheDocument();
+  });
+
+  it('gives one generic instruction and no per-rule "Fix:" lines', async () => {
+    await uploadAndCheck(csvFile([HEADER, JANE, JANE, 'Ann,Lee,']));
+    expect(screen.queryByText(/Fix:/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/upload it again/)).toHaveLength(1);
+    expect(screen.getByText(/Nothing was created/)).toBeInTheDocument();
+  });
+});

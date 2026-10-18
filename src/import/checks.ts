@@ -4,6 +4,8 @@ export const HEADERS = ['First Name', 'Last Name', 'Email Address'];
 
 export const COLUMNS_MESSAGE = `The file must have exactly these columns: ${HEADERS.join(', ')}.`;
 export const EMPTY_MESSAGE = 'The file has no Clients. Add at least one row below the header.';
+export const REQUIRED_RULE = 'Required fields missing';
+export const DUPLICATE_RULE = 'Duplicate Email Address';
 export const MALFORMED_MESSAGE = 'The file is not a valid CSV.';
 
 /** Splits CSV text into rows of cells. Returns null when a quoted cell is never closed. */
@@ -62,12 +64,31 @@ export function checkImportFile(text: string): ValidationResult {
     header.length === HEADERS.length && header.every((h, i) => h.trim().toLowerCase() === HEADERS[i].toLowerCase());
   if (!matches) return fileFailure(COLUMNS_MESSAGE);
 
-  const clients: ImportClient[] = body
-    .filter((row) => !isBlank(row))
-    .map(([firstName, lastName, email]) => ({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() }));
-  if (clients.length === 0) return fileFailure(EMPTY_MESSAGE);
+  // Row numbers are the spreadsheet's, with the header as row 1; blank rows are skipped but still counted.
+  const rows = body
+    .map((cells, i) => ({ row: i + 2, cells: HEADERS.map((_, c) => (cells[c] ?? '').trim()), blank: isBlank(cells) }))
+    .filter((r) => !r.blank);
+  if (rows.length === 0) return fileFailure(EMPTY_MESSAGE);
 
+  const missing = rows.flatMap(({ row, cells }) =>
+    HEADERS.flatMap((column, c) => (cells[c] === '' ? [{ row, detail: column }] : [])),
+  );
+
+  // Emails match ignoring case and surrounding spaces; every row sharing one is reported.
+  const seen = new Map<string, number>();
+  for (const { cells } of rows) {
+    const key = cells[2].toLowerCase();
+    if (key) seen.set(key, (seen.get(key) ?? 0) + 1);
+  }
+  const duplicates = rows
+    .filter(({ cells }) => (seen.get(cells[2].toLowerCase()) ?? 0) > 1)
+    .map(({ row, cells }) => ({ row, value: cells[2] }));
+
+  const errors: RuleError[] = [];
+  if (missing.length > 0) errors.push({ rule: REQUIRED_RULE, rows: missing });
+  if (duplicates.length > 0) errors.push({ rule: DUPLICATE_RULE, rows: duplicates });
+  if (errors.length > 0) return { ok: false, check: 'file', errors };
+
+  const clients: ImportClient[] = rows.map(({ cells: [firstName, lastName, email] }) => ({ firstName, lastName, email }));
   return { ok: true, clients };
 }
-
-export type { RuleError };

@@ -7,7 +7,8 @@ export interface Advisor {
 
 export interface RuleError {
   rule: string;
-  rows: { row: number; value?: string }[];
+  /** `value` is the offending cell, shown in quotes; `detail` is plain text such as the missing column. */
+  rows: { row: number; value?: string; detail?: string }[];
 }
 
 export interface FailedRecord {

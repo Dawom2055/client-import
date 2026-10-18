@@ -50,18 +50,18 @@ describe('Validation Failure', () => {
     expect(screen.getByText('Total errors: 13')).toBeInTheDocument();
     expect(screen.getByText('Email must be a valid email address.')).toBeInTheDocument();
     expect(screen.getByText('First name is required.')).toBeInTheDocument();
-    expect(screen.getByText('Row 2')).toBeInTheDocument();
+    expect(screen.getByText('Row 2: “bad0@”')).toBeInTheDocument();
     expect(screen.getByText(/bad0@/)).toBeInTheDocument();
   });
 
   it('shows ten rows per group and reveals the rest on request', async () => {
     const { user } = await reachValidationFailure();
-    expect(screen.getByText('Row 11')).toBeInTheDocument();
-    expect(screen.queryByText('Row 12')).not.toBeInTheDocument();
+    expect(screen.getByText(/^Row 11:/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Row 12:/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Show 2 more rows' }));
-    expect(screen.getByText('Row 12')).toBeInTheDocument();
-    expect(screen.getByText('Row 13')).toBeInTheDocument();
+    expect(screen.getByText(/^Row 12:/)).toBeInTheDocument();
+    expect(screen.getByText(/^Row 13:/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Show .* more/ })).not.toBeInTheDocument();
   });
 

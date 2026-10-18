@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AdvisorSearch } from './AdvisorSearch';
+import { fileFailure, UNREADABLE_MESSAGE } from './checks';
 import { Dropzone } from './Dropzone';
 import { InvalidScreen, PartialScreen, ReviewScreen, RunningScreen, SuccessScreen } from './screens';
 import type { Advisor, Check, CreateResult, ImportClient, ImportService, Phase, RuleError, ValidationResult } from './types';
@@ -115,7 +116,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
 
   const start = () => {
     if (!file) return;
-    validation.current = service.validate(file);
+    validation.current = service.validate(file).catch(() => fileFailure(UNREADABLE_MESSAGE));
     setPhase('file');
   };
 
@@ -185,7 +186,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
             />
             <div className="field">
               <span className="field-label">Clients</span>
-              <p className="hint">Use the template for client names, contact details, and companions. One file covers both.</p>
+              <p className="hint">Use the template to list each Client's name and email address, one Client per row.</p>
               <button type="button" className="link-btn with-icon" onClick={downloadTemplate}>
                 <span aria-hidden>⤓</span> Download Import Template
               </button>

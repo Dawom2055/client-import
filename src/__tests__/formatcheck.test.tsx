@@ -49,6 +49,11 @@ describe('Format check: names', () => {
     expectPassed();
   });
 
+  it('accepts a name written with combining accents', async () => {
+    await uploadAndCheck(csvFile([HEADER, `${'Jose\u0301'},Garci\u0301a,jose@example.com`]));
+    expectPassed();
+  });
+
   it('accepts a name of exactly 50 characters and reports one of 51', async () => {
     await uploadAndCheck(csvFile([HEADER, `${'a'.repeat(50)},Doe,fifty@example.com`]));
     expectPassed();
@@ -77,10 +82,25 @@ describe('Format check: Email Address', () => {
     expectPassed();
   });
 
+  it('accepts an email address of exactly 254 characters', async () => {
+    const local = 'a'.repeat(64);
+    const email = `${local}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(57)}.com`;
+    expect(email).toHaveLength(254);
+    await uploadAndCheck(csvFile([HEADER, `Jane,Doe,${email}`]));
+    expectPassed();
+  });
+
   it('reports an email address over 254 characters', async () => {
     const long = `${'a'.repeat(250)}@example.com`;
     await uploadAndCheck(csvFile([HEADER, `Jane,Doe,${long}`]));
     expect(screen.getByText(EMAIL_RULE)).toBeInTheDocument();
+  });
+});
+
+describe('Format check: row numbers', () => {
+  it('numbers rows like the spreadsheet, counting blank rows', async () => {
+    await uploadAndCheck(csvFile([HEADER, JANE, '', 'Ann,Lee,bad-email']));
+    expect(screen.getByText('Row 4: “bad-email”')).toBeInTheDocument();
   });
 });
 

@@ -93,6 +93,33 @@ describe('File check: the file itself', () => {
     expectPassed();
   });
 
+  it('rejects a row with text beyond the template columns, even when its own columns are blank', async () => {
+    const extra = await uploadAndCheck(csvFile([HEADER, `${JANE},extra`]));
+    expectFileLevelFailure(COLUMNS_MESSAGE, extra.create);
+    extra.unmount();
+
+    const blank = await uploadAndCheck(csvFile([HEADER, JANE, ',,,notes']));
+    expectFileLevelFailure(COLUMNS_MESSAGE, blank.create);
+  });
+
+  it('accepts trailing empty cells, as spreadsheets save them', async () => {
+    await uploadAndCheck(csvFile([`${HEADER},`, `${JANE},`]));
+    expectPassed();
+  });
+
+  it('rejects a file that cannot be read instead of waiting forever', async () => {
+    const create = vi.fn(async () => ({ created: 0, failed: [] }));
+    const validate = async () => {
+      throw new Error('disk error');
+    };
+    const view = renderClientsPage({ service: createFakeService({ create, validate }) });
+    await openAsSarah(view.user);
+    await addFile(view.user, csvFile([HEADER, JANE]));
+    await view.user.click(screen.getByRole('button', { name: 'Continue' }));
+    await advance(1700);
+    expectFileLevelFailure('The file could not be read.', create);
+  });
+
   it('accepts quoted cells with commas, a byte-order mark and Windows line endings', async () => {
     const text = `\uFEFF${HEADER}\r\n"Doe, Jr",Jane,jane@example.com\r\n`;
     await uploadAndCheck(new File([text], 'clients.csv', { type: 'text/csv' }));

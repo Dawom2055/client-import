@@ -47,6 +47,13 @@ describe('confirming and creating', () => {
     ]);
   });
 
+  it('numbers the Review table by Client, not by spreadsheet row', async () => {
+    const file = csvFile([HEADER, 'Jane,Doe,jane@example.com', '', 'Ann,Lee,ann@example.com']);
+    await reachConfirm(createFakeService(), file);
+    const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    expect(rows.map((r) => within(r).getAllByRole('cell')[0].textContent)).toEqual(['1', '2']);
+  });
+
   it('lists every Client, not just a preview', async () => {
     await reachConfirm(createFakeService(), csv('big.csv', 40));
     expect(screen.getByText('Total records: 40')).toBeInTheDocument();

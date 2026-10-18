@@ -8,12 +8,12 @@ afterEach(() => {
 });
 
 describe('adding a file', () => {
-  it('offers a single Import Template for Clients and Companions', async () => {
+  it('offers a single Import Template for Clients', async () => {
     const { user } = renderClientsPage();
     await openAsSarah(user);
     expect(screen.getAllByRole('button', { name: /Download .*Template/ })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Download Import Template' })).toBeInTheDocument();
-    expect(screen.queryByText(/companion template/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/companion/i)).not.toBeInTheDocument();
   });
 
   it('downloads an Import Template with exactly First Name, Last Name and Email Address', async () => {

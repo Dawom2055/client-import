@@ -33,10 +33,10 @@ The outcome when the Import File fails either check. The whole file is rejected,
 The outcome when every row passed validation but some Clients failed to be created. The created Clients are kept and the failures are reported.
 
 **File check**:
-The first check, Step 2. Fails the file if the headers are not the Import Template's, the file is empty, a required field is blank, or an Email appears more than once in the file. Every occurrence of a duplicate is reported.
+The first check, Step 2. Fails the file if the headers are not the Import Template's, the file is empty, a required field is blank, or an Email Address appears more than once in the file. Every occurrence of a duplicate is reported.
 
 **Format check**:
-The second check, Step 3, run only if the File check passed. Fails the file if a name is over 50 characters or has characters other than letters, spaces and `- ' . ,`, or an Email is not a valid address of up to 254 characters.
+The second check, Step 3, run only if the File check passed. Fails the file if a name is over 50 characters or has characters other than letters, spaces and `- ' . ,`, or an Email Address is not a valid address of up to 254 characters.
 
 **Review**:
 Step 4, shown after both checks pass. Lists every Client in the Import File with its Advisor so the admin can confirm before anything is created.

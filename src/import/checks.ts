@@ -11,6 +11,7 @@ export const MAX_EMAIL = 254;
 export const nameRule = (field: string) =>
   `${field} must be ${MAX_NAME} characters or fewer and can only contain letters, spaces, and - ' . , characters.`;
 export const EMAIL_RULE = `Email Address must be a valid email address of ${MAX_EMAIL} characters or fewer.`;
+export const UNREADABLE_MESSAGE = 'The file could not be read.';
 export const MALFORMED_MESSAGE = 'The file is not a valid CSV.';
 
 /** Splits CSV text into rows of cells. Returns null when a quoted cell is never closed. */
@@ -57,7 +58,14 @@ function parseCsv(text: string): string[][] | null {
 
 const isBlank = (row: string[]) => row.every((cell) => cell.trim() === '');
 
-const fileFailure = (rule: string): ValidationResult => ({ ok: false, check: 'file', errors: [{ rule, rows: [] }] });
+/** Spreadsheets often save a trailing comma; empty cells after the last real one are not columns. */
+const trimTrailingEmpty = (cells: string[]) => {
+  let end = cells.length;
+  while (end > 0 && cells[end - 1].trim() === '') end--;
+  return cells.slice(0, end);
+};
+
+export const fileFailure = (rule: string): ValidationResult => ({ ok: false, check: 'file', errors: [{ rule, rows: [] }] });
 
 const NAME_PATTERN = /^[\p{L} \-'.,]+$/u;
 const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
@@ -81,14 +89,17 @@ export function checkImportFile(text: string): ValidationResult {
   const parsed = parseCsv(text);
   if (!parsed) return fileFailure(MALFORMED_MESSAGE);
 
-  const [header = [], ...body] = parsed;
+  const [rawHeader = [], ...body] = parsed;
+  const header = trimTrailingEmpty(rawHeader);
   const matches =
     header.length === HEADERS.length && header.every((h, i) => h.trim().toLowerCase() === HEADERS[i].toLowerCase());
   if (!matches) return fileFailure(COLUMNS_MESSAGE);
 
+  if (body.some((cells) => trimTrailingEmpty(cells).length > HEADERS.length)) return fileFailure(COLUMNS_MESSAGE);
+
   // Row numbers are the spreadsheet's, with the header as row 1; blank rows are skipped but still counted.
   const rows = body
-    .map((cells, i) => ({ row: i + 2, cells: HEADERS.map((_, c) => (cells[c] ?? '').trim()), blank: isBlank(cells) }))
+    .map((cells, i) => ({ row: i + 2, cells: HEADERS.map((_, c) => (cells[c] ?? '').trim().normalize('NFC')), blank: isBlank(cells) }))
     .filter((r) => !r.blank);
   if (rows.length === 0) return fileFailure(EMPTY_MESSAGE);
 

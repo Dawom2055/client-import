@@ -6,6 +6,11 @@ export const COLUMNS_MESSAGE = `The file must have exactly these columns: ${HEAD
 export const EMPTY_MESSAGE = 'The file has no Clients. Add at least one row below the header.';
 export const REQUIRED_RULE = 'Required fields missing';
 export const DUPLICATE_RULE = 'Duplicate Email Address';
+export const MAX_NAME = 50;
+export const MAX_EMAIL = 254;
+export const nameRule = (field: string) =>
+  `${field} must be ${MAX_NAME} characters or fewer and can only contain letters, spaces, and - ' . , characters.`;
+export const EMAIL_RULE = `Email Address must be a valid email address of ${MAX_EMAIL} characters or fewer.`;
 export const MALFORMED_MESSAGE = 'The file is not a valid CSV.';
 
 /** Splits CSV text into rows of cells. Returns null when a quoted cell is never closed. */
@@ -54,7 +59,24 @@ const isBlank = (row: string[]) => row.every((cell) => cell.trim() === '');
 
 const fileFailure = (rule: string): ValidationResult => ({ ok: false, check: 'file', errors: [{ rule, rows: [] }] });
 
-/** Runs the File check on the text of an Import File. Nothing is created. */
+const NAME_PATTERN = /^[\p{L} \-'.,]+$/u;
+const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+
+/** The Format check: the content of each cell, run only once the File check has passed. */
+function formatCheck(rows: { row: number; cells: string[] }[]): RuleError[] {
+  const offenders = (cell: number, isValid: (value: string) => boolean) =>
+    rows.filter(({ cells }) => !isValid(cells[cell])).map(({ row, cells }) => ({ row, value: cells[cell] }));
+  const validName = (v: string) => v.length <= MAX_NAME && NAME_PATTERN.test(v);
+  const validEmail = (v: string) => v.length <= MAX_EMAIL && EMAIL_PATTERN.test(v);
+
+  return [
+    { rule: nameRule(HEADERS[0]), rows: offenders(0, validName) },
+    { rule: nameRule(HEADERS[1]), rows: offenders(1, validName) },
+    { rule: EMAIL_RULE, rows: offenders(2, validEmail) },
+  ].filter((e) => e.rows.length > 0);
+}
+
+/** Runs the File check, then the Format check, on the text of an Import File. Nothing is created. */
 export function checkImportFile(text: string): ValidationResult {
   const parsed = parseCsv(text);
   if (!parsed) return fileFailure(MALFORMED_MESSAGE);
@@ -88,6 +110,9 @@ export function checkImportFile(text: string): ValidationResult {
   if (missing.length > 0) errors.push({ rule: REQUIRED_RULE, rows: missing });
   if (duplicates.length > 0) errors.push({ rule: DUPLICATE_RULE, rows: duplicates });
   if (errors.length > 0) return { ok: false, check: 'file', errors };
+
+  const formatErrors = formatCheck(rows);
+  if (formatErrors.length > 0) return { ok: false, check: 'format', errors: formatErrors };
 
   const clients: ImportClient[] = rows.map(({ cells: [firstName, lastName, email] }) => ({ firstName, lastName, email }));
   return { ok: true, clients };

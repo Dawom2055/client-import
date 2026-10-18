@@ -3,7 +3,16 @@ import { AdvisorSearch } from './AdvisorSearch';
 import { fileFailure, UNREADABLE_MESSAGE } from './checks';
 import { Dropzone } from './Dropzone';
 import { InvalidScreen, PartialScreen, ReviewScreen, RunningScreen, SuccessScreen } from './screens';
-import type { Advisor, Check, CreateResult, ImportClient, ImportService, Phase, RuleError, ValidationResult } from './types';
+import type {
+  Advisor,
+  Check,
+  CreateResult,
+  ImportClient,
+  ImportService,
+  Phase,
+  RuleError,
+  ValidationResult,
+} from './types';
 
 interface Props {
   initialAdvisor: Advisor | null;
@@ -175,7 +184,10 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
         {phase === 'select' && (
           <>
             <h3 className="modal-title">Upload your Client File</h3>
-            <p>Choose the advisor, download the template, and upload your file. Make sure the file includes all required fields before continuing.</p>
+            <p>
+              Choose the advisor, download the template, and upload your file. Make sure the file includes all required
+              fields before continuing.
+            </p>
             <AdvisorSearch
               value={advisor}
               onSearch={service.searchAdvisors}

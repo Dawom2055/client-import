@@ -7,7 +7,8 @@ type User = ReturnType<typeof renderClientsPage>['user'];
 export const HEADER = 'First Name,Last Name,Email Address';
 
 /** A CSV file with the given lines (header first), as an admin would save it from a spreadsheet. */
-export const csvFile = (lines: string[], name = 'clients.csv') => new File([lines.join('\n')], name, { type: 'text/csv' });
+export const csvFile = (lines: string[], name = 'clients.csv') =>
+  new File([lines.join('\n')], name, { type: 'text/csv' });
 
 /** A valid Import File of `rows` Clients, each with its own Email. */
 export const csv = (name = 'clients.csv', rows = 3) =>
@@ -36,7 +37,9 @@ export const fileInput = () => document.querySelector<HTMLInputElement>('input[t
 export const addFile = (user: User, file: File) => user.upload(fileInput(), file);
 
 export const dropFile = (file: File) =>
-  fireEvent.drop(screen.getByText('Drag and drop your CSV file here').parentElement!, { dataTransfer: { files: [file] } });
+  fireEvent.drop(screen.getByText('Drag and drop your CSV file here').parentElement!, {
+    dataTransfer: { files: [file] },
+  });
 
 /** Lets timers and pending promises run, wrapped in act. */
 export const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));

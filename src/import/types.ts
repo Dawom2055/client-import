@@ -43,12 +43,4 @@ export interface ImportService {
 
 export type Scenario = 'auto' | 'success' | 'partial';
 
-export type Phase =
-  | 'select'
-  | 'file'
-  | 'format'
-  | 'confirm'
-  | 'create'
-  | 'invalid'
-  | 'success'
-  | 'partial';
+export type Phase = 'select' | 'file' | 'format' | 'confirm' | 'create' | 'invalid' | 'success' | 'partial';

@@ -41,7 +41,9 @@ describe('opening Client Import', () => {
     await openImport(user);
     await user.type(screen.getByLabelText('Advisor search'), 'sar');
     await act(() => vi.advanceTimersByTimeAsync(300));
-    await user.click(within(screen.getByRole('listbox', { name: 'Advisors' })).getByRole('option', { name: /Sarah Brown/ }));
+    await user.click(
+      within(screen.getByRole('listbox', { name: 'Advisors' })).getByRole('option', { name: /Sarah Brown/ }),
+    );
     expect(screen.getByRole('button', { name: 'Clear advisor' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));

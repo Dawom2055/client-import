@@ -31,8 +31,10 @@ const expectPassed = () => {
 };
 
 describe('Format check: names', () => {
-  it('reports a name with a character other than letters, spaces and - \' . ,', async () => {
-    const { create } = await uploadAndCheck(csvFile([HEADER, JANE, 'J4ne,Doe,a@example.com', 'Ann,Lee#,b@example.com']));
+  it("reports a name with a character other than letters, spaces and - ' . ,", async () => {
+    const { create } = await uploadAndCheck(
+      csvFile([HEADER, JANE, 'J4ne,Doe,a@example.com', 'Ann,Lee#,b@example.com']),
+    );
     expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
     expect(screen.getByText('Total errors: 2')).toBeInTheDocument();
     expect(screen.getByText(NAME_RULE('First Name'))).toBeInTheDocument();
@@ -44,8 +46,10 @@ describe('Format check: names', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('accepts accented letters, spaces and - \' . ,', async () => {
-    await uploadAndCheck(csvFile([HEADER, `"José Mary-Ann",O'Brien Jr.,jose@example.com`, 'Zoë,"Smith, III",zoe@example.com']));
+  it("accepts accented letters, spaces and - ' . ,", async () => {
+    await uploadAndCheck(
+      csvFile([HEADER, `"José Mary-Ann",O'Brien Jr.,jose@example.com`, 'Zoë,"Smith, III",zoe@example.com']),
+    );
     expectPassed();
   });
 
@@ -68,14 +72,20 @@ describe('Format check: names', () => {
 });
 
 describe('Format check: Email Address', () => {
-  it.each(['plainaddress', 'jane@', '@example.com', 'jane@example', 'jane doe@example.com', 'a@@example.com', 'jane@exa_mple.com', 'jane!@example.com'])(
-    'reports %s as not a valid email address',
-    async (email) => {
-      await uploadAndCheck(csvFile([HEADER, `Jane,Doe,${email}`]));
-      expect(screen.getByText(EMAIL_RULE)).toBeInTheDocument();
-      expect(screen.getByText(`Row 2: “${email}”`)).toBeInTheDocument();
-    },
-  );
+  it.each([
+    'plainaddress',
+    'jane@',
+    '@example.com',
+    'jane@example',
+    'jane doe@example.com',
+    'a@@example.com',
+    'jane@exa_mple.com',
+    'jane!@example.com',
+  ])('reports %s as not a valid email address', async (email) => {
+    await uploadAndCheck(csvFile([HEADER, `Jane,Doe,${email}`]));
+    expect(screen.getByText(EMAIL_RULE)).toBeInTheDocument();
+    expect(screen.getByText(`Row 2: “${email}”`)).toBeInTheDocument();
+  });
 
   it('accepts letters, digits and . _ % + - before the @ and . - in the domain', async () => {
     await uploadAndCheck(csvFile([HEADER, 'Jane,Doe,j.a_n%e+1-x@mail-box.example.co.uk']));

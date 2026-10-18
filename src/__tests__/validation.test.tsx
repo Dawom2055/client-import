@@ -67,7 +67,9 @@ describe('Validation Failure', () => {
 
   it('says to correct the rows and upload again, and that nothing was created', async () => {
     const { create } = await reachValidationFailure();
-    expect(screen.getByText('Correct these rows in your file and upload it again. Nothing was created.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Correct these rows in your file and upload it again. Nothing was created.'),
+    ).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
   });
 
@@ -92,7 +94,9 @@ describe('Validation Failure', () => {
     await user.click(screen.getByRole('button', { name: 'Client Import' }));
     await user.type(screen.getByLabelText('Advisor search'), 'valerie');
     await advance(300);
-    await user.click(within(screen.getByRole('listbox', { name: 'Advisors' })).getByRole('option', { name: /Valerie Smith/ }));
+    await user.click(
+      within(screen.getByRole('listbox', { name: 'Advisors' })).getByRole('option', { name: /Valerie Smith/ }),
+    );
     await addFile(user, csv());
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     await advance(1700);

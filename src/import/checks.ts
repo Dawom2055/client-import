@@ -65,7 +65,11 @@ const trimTrailingEmpty = (cells: string[]) => {
   return cells.slice(0, end);
 };
 
-export const fileFailure = (rule: string): ValidationResult => ({ ok: false, check: 'file', errors: [{ rule, rows: [] }] });
+export const fileFailure = (rule: string): ValidationResult => ({
+  ok: false,
+  check: 'file',
+  errors: [{ rule, rows: [] }],
+});
 
 const NAME_PATTERN = /^[\p{L} \-'.,]+$/u;
 const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
@@ -99,7 +103,11 @@ export function checkImportFile(text: string): ValidationResult {
 
   // Row numbers are the spreadsheet's, with the header as row 1; blank rows are skipped but still counted.
   const rows = body
-    .map((cells, i) => ({ row: i + 2, cells: HEADERS.map((_, c) => (cells[c] ?? '').trim().normalize('NFC')), blank: isBlank(cells) }))
+    .map((cells, i) => ({
+      row: i + 2,
+      cells: HEADERS.map((_, c) => (cells[c] ?? '').trim().normalize('NFC')),
+      blank: isBlank(cells),
+    }))
     .filter((r) => !r.blank);
   if (rows.length === 0) return fileFailure(EMPTY_MESSAGE);
 
@@ -125,6 +133,10 @@ export function checkImportFile(text: string): ValidationResult {
   const formatErrors = formatCheck(rows);
   if (formatErrors.length > 0) return { ok: false, check: 'format', errors: formatErrors };
 
-  const clients: ImportClient[] = rows.map(({ cells: [firstName, lastName, email] }) => ({ firstName, lastName, email }));
+  const clients: ImportClient[] = rows.map(({ cells: [firstName, lastName, email] }) => ({
+    firstName,
+    lastName,
+    email,
+  }));
   return { ok: true, clients };
 }

@@ -33,14 +33,19 @@ describe('confirming and creating', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent('Sarah Brown');
 
     const table = screen.getByRole('table', { name: 'Clients to create' });
-    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
-      '#',
-      'First Name',
-      'Last Name',
-      'Email Address',
-    ]);
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual(['#', 'First Name', 'Last Name', 'Email Address']);
     const rows = within(table).getAllByRole('row').slice(1);
-    expect(rows.map((r) => within(r).getAllByRole('cell').map((c) => c.textContent))).toEqual([
+    expect(
+      rows.map((r) =>
+        within(r)
+          .getAllByRole('cell')
+          .map((c) => c.textContent),
+      ),
+    ).toEqual([
       ['1', 'Jane', 'Doe', 'jane@example.com'],
       ['2', 'Ann', 'Lee', 'ann@example.com'],
       ['3', 'Bob', 'Ray', 'bob@example.com'],

@@ -99,7 +99,9 @@ export function InvalidScreen({ errors, onBack }: { errors: RuleError[]; onBack:
   return (
     <>
       <div className="status-line danger" role="alert">
-        <span className="badge danger" aria-hidden>!</span>
+        <span className="badge danger" aria-hidden>
+          !
+        </span>
         <h3>
           Validation failed: {total} {total === 1 ? 'issue' : 'issues'} found in your file
         </h3>
@@ -120,11 +122,21 @@ export function InvalidScreen({ errors, onBack }: { errors: RuleError[]; onBack:
   );
 }
 
-export function SuccessScreen({ created, onBack, onDone }: { created: number; onBack: () => void; onDone: () => void }) {
+export function SuccessScreen({
+  created,
+  onBack,
+  onDone,
+}: {
+  created: number;
+  onBack: () => void;
+  onDone: () => void;
+}) {
   return (
     <>
       <div className="status-line ok">
-        <span className="badge ok" aria-hidden>✓</span>
+        <span className="badge ok" aria-hidden>
+          ✓
+        </span>
         <h3>Success! Client import completed</h3>
       </div>
       <p>
@@ -158,11 +170,14 @@ export function PartialScreen({
   return (
     <>
       <div className="status-line warn" role="alert">
-        <span className="badge warn" aria-hidden>!</span>
+        <span className="badge warn" aria-hidden>
+          !
+        </span>
         <h3>Partial success! Some client profiles could not be created</h3>
       </div>
       <p>
-        Out of {total} client profiles, {created} were successfully created. {failed.length} failed due to system errors.
+        Out of {total} client profiles, {created} were successfully created. {failed.length} failed due to system
+        errors.
       </p>
       <div className="panel">
         <strong>Failed records</strong>

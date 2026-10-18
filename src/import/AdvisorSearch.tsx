@@ -103,7 +103,9 @@ export function AdvisorSearch({ value, onChange, onSearch }: Props) {
                 role="combobox"
                 aria-expanded={open}
                 aria-controls={listId}
-                aria-activedescendant={open && status === 'ready' && results[active] ? `${listId}-${active}` : undefined}
+                aria-activedescendant={
+                  open && status === 'ready' && results[active] ? `${listId}-${active}` : undefined
+                }
                 autoComplete="off"
                 placeholder="Enter advisor name"
                 value={query}

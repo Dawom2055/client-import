@@ -22,9 +22,14 @@ export function Dropzone({ disabled, file, onFile }: Props) {
   if (disabled) {
     return (
       <div className="dropzone disabled">
-        <span className="dz-icon" aria-hidden>⇪</span>
+        <span className="dz-icon" aria-hidden>
+          ⇪
+        </span>
         <strong>File upload is disabled until an advisor is selected</strong>
-        <p>Choose an advisor from the Advisor search field above to enable the upload area and continue with your client file.</p>
+        <p>
+          Choose an advisor from the Advisor search field above to enable the upload area and continue with your client
+          file.
+        </p>
       </div>
     );
   }
@@ -53,7 +58,9 @@ export function Dropzone({ disabled, file, onFile }: Props) {
           e.target.value = '';
         }}
       />
-      <span className="dz-icon" aria-hidden>⇪</span>
+      <span className="dz-icon" aria-hidden>
+        ⇪
+      </span>
       {file ? (
         <>
           <strong>{file.name} added</strong>

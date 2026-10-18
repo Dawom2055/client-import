@@ -17,7 +17,11 @@ async function reachPartialSuccess() {
   const service = createFakeService({
     validate: async () => ({
       ok: true,
-      clients: Array.from({ length: 5 }, (_, i) => ({ firstName: 'Jane', lastName: 'Doe', email: `jane${i}@example.com` })),
+      clients: Array.from({ length: 5 }, (_, i) => ({
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: `jane${i}@example.com`,
+      })),
     }),
     create: async () => ({ created: 3, failed }),
   });
@@ -36,7 +40,9 @@ describe('Partial Success', () => {
   it('states the total, how many were created and how many failed', async () => {
     await reachPartialSuccess();
     expect(screen.getByText('Partial success! Some client profiles could not be created')).toBeInTheDocument();
-    expect(screen.getByText('Out of 5 client profiles, 3 were successfully created. 2 failed due to system errors.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Out of 5 client profiles, 3 were successfully created. 2 failed due to system errors.'),
+    ).toBeInTheDocument();
   });
 
   it('lists each failed row readably with its row number, name and reason', async () => {

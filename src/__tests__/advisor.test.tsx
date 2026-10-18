@@ -53,8 +53,8 @@ describe('choosing an Advisor', () => {
   });
 
   it('shows a loading indicator while advisors are being searched', async () => {
-    let finish: (a: typeof SARAH[]) => void = () => {};
-    const searchAdvisors = () => new Promise<typeof SARAH[]>((resolve) => (finish = resolve));
+    let finish: (a: (typeof SARAH)[]) => void = () => {};
+    const searchAdvisors = () => new Promise<(typeof SARAH)[]>((resolve) => (finish = resolve));
     const { user } = renderClientsPage({ service: createFakeService({ searchAdvisors }) });
     await openImport(user);
     await searchFor(user, 'sa');

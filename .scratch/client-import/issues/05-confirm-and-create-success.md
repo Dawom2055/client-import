@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Step 4 states how many Clients will be created and for which Advisor, with Cancel and a create action
-- [ ] Step 5 shows progress; the close control is disabled with a hint during creation and works on steps 1 to 4 and on the result screens
-- [ ] Success shows the number of Clients created
-- [ ] "Done" closes the modal and returns to the ADX Clients page
-- [ ] "Back to file upload" resets the modal to the very beginning
-- [ ] Escape closes the modal whenever closing is allowed
-- [ ] Tests cover each of the above through the modal, using a fake that returns success
+- [x] Step 4 states how many Clients will be created and for which Advisor, with Cancel and a create action
+- [x] Step 5 shows progress; the close control is disabled with a hint during creation and works on steps 1 to 4 and on the result screens
+- [x] Success shows the number of Clients created
+- [x] "Done" closes the modal and returns to the ADX Clients page
+- [x] "Back to file upload" resets the modal to the very beginning
+- [x] Escape closes the modal whenever closing is allowed
+- [x] Tests cover each of the above through the modal, using a fake that returns success

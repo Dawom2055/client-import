@@ -1,12 +1,8 @@
+import advisors from '../data/advisors.json';
 import { checkImportFile } from './checks';
 import type { Advisor, ImportService, Scenario } from './types';
 
-export const ADVISORS: Advisor[] = [
-  { id: 'a1', name: 'Sarah Brown', email: 'sarah.brown@triparc.com', office: 'RETAIL - TTN' },
-  { id: 'a2', name: 'Sarah Chen', email: 'sarah.chen@triparc.com', office: 'RETAIL - VAN' },
-  { id: 'a3', name: 'Valerie Smith', email: 'val.smith@triparc.com', office: 'RETAIL - CAL' },
-  { id: 'a4', name: 'Marcus Reid', email: 'marcus.reid@triparc.com', office: 'CORPORATE - TOR' },
-];
+export const ADVISORS: Advisor[] = advisors;
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

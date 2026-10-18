@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] About 20 dummy Advisors live in their own data folder, separate from the search code
-- [ ] Searching by name or email finds them, starting at two characters
-- [ ] Each result shows name, email and office
-- [ ] Adding an Advisor to the data folder makes it searchable with no code change
-- [ ] Existing Advisor tests keep passing, with new coverage for the larger set
+- [x] About 20 dummy Advisors live in their own data folder, separate from the search code
+- [x] Searching by name or email finds them, starting at two characters
+- [x] Each result shows name, email and office
+- [x] Adding an Advisor to the data folder makes it searchable with no code change
+- [x] Existing Advisor tests keep passing, with new coverage for the larger set

@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Search begins after two characters and can also be triggered with the Search button
-- [ ] Results show name, email and office; picking works by mouse and keyboard
-- [ ] A loading indicator, a "No advisors found" message, and an error with a Retry action are each shown in the right situation
-- [ ] The chosen Advisor can be cleared and another picked
-- [ ] When "Using ADX as" is set to an Advisor, that Advisor is preselected and can still be changed
-- [ ] The upload area is disabled, with an explanation, until an Advisor is chosen
-- [ ] Tests cover each of the above through the modal
+- [x] Search begins after two characters and can also be triggered with the Search button
+- [x] Results show name, email and office; picking works by mouse and keyboard
+- [x] A loading indicator, a "No advisors found" message, and an error with a Retry action are each shown in the right situation
+- [x] The chosen Advisor can be cleared and another picked
+- [x] When "Using ADX as" is set to an Advisor, that Advisor is preselected and can still be changed
+- [x] The upload area is disabled, with an explanation, until an Advisor is chosen
+- [x] Tests cover each of the above through the modal

@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Advisor search and import validation/creation go through a single import service that tests can replace with a fake
-- [ ] Vitest and React Testing Library run with fake timers
-- [ ] Test: the Client Import button is visible for an admin on the Operations team and hidden for any other role
-- [ ] Test: opening the modal shows the first step with no Advisor or file left over from a previous open
-- [ ] Test: Cancel closes the modal
+- [x] Advisor search and import validation/creation go through a single import service that tests can replace with a fake
+- [x] Vitest and React Testing Library run with fake timers
+- [x] Test: the Client Import button is visible for an admin on the Operations team and hidden for any other role
+- [x] Test: opening the modal shows the first step with no Advisor or file left over from a previous open
+- [x] Test: Cancel closes the modal

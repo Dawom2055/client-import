@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { checkFile } from './mockApi';
+import { checkFile } from './fileRules';
 
 interface Props {
   disabled: boolean;

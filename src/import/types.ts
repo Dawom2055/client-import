@@ -16,10 +16,20 @@ export interface FailedRecord {
   reason: string;
 }
 
-export type Outcome =
-  | { kind: 'success'; created: number }
-  | { kind: 'partial'; total: number; created: number; failed: FailedRecord[] }
-  | { kind: 'invalid'; errors: RuleError[] };
+export type ValidationResult = { ok: true; rows: number } | { ok: false; errors: RuleError[] };
+
+export interface CreateResult {
+  created: number;
+  failed: FailedRecord[];
+}
+
+/** Everything the Client Import UI needs from the outside world. */
+export interface ImportService {
+  searchAdvisors(query: string): Promise<Advisor[]>;
+  /** Checks the whole Import File; nothing is created. */
+  validate(file: File): Promise<ValidationResult>;
+  create(file: File, advisor: Advisor, rows: number): Promise<CreateResult>;
+}
 
 export type Scenario = 'auto' | 'success' | 'partial' | 'invalid';
 

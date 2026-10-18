@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { AdvisorSearch } from './AdvisorSearch';
 import { Dropzone } from './Dropzone';
-import { countRows, resolveOutcome } from './mockApi';
 import { ConfirmScreen, InvalidScreen, PartialScreen, RunningScreen, SuccessScreen } from './screens';
-import type { Advisor, Outcome, Phase, Scenario } from './types';
+import type { Advisor, CreateResult, ImportService, Phase, RuleError, ValidationResult } from './types';
 
 interface Props {
   initialAdvisor: Advisor | null;
-  scenario: Scenario;
+  service: ImportService;
   onClose: () => void;
 }
 
@@ -39,14 +38,17 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-export function ClientImportModal({ initialAdvisor, scenario, onClose }: Props) {
+export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>('select');
   const [advisor, setAdvisor] = useState<Advisor | null>(initialAdvisor);
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState(0);
-  const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const [errors, setErrors] = useState<RuleError[]>([]);
+  const [result, setResult] = useState<CreateResult | null>(null);
   const [pct, setPct] = useState(0);
   const dialog = useRef<HTMLDivElement>(null);
+  const validation = useRef<Promise<ValidationResult> | null>(null);
+  const creation = useRef<Promise<CreateResult> | null>(null);
 
   const closable = phase !== 'create';
   const close = () => closable && onClose();
@@ -57,7 +59,8 @@ export function ClientImportModal({ initialAdvisor, scenario, onClose }: Props) 
     setAdvisor(initialAdvisor);
     setFile(null);
     setRows(0);
-    setOutcome(null);
+    setErrors([]);
+    setResult(null);
   };
 
   useEffect(() => {
@@ -70,30 +73,53 @@ export function ClientImportModal({ initialAdvisor, scenario, onClose }: Props) 
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  // Drives the three timed phases; each one advances when its bar fills.
+  // Drives the three timed phases. Each advances once its bar is full and the service has answered.
   useEffect(() => {
     const duration = RUN_MS[phase];
     if (!duration) return;
+    let cancelled = false;
     setPct(0);
     const start = Date.now();
-    const id = setInterval(() => {
+    const id = setInterval(async () => {
       const p = Math.min(100, Math.round(((Date.now() - start) / duration) * 100));
       setPct(p);
       if (p < 100) return;
       clearInterval(id);
-      if (phase === 'format') setPhase('external');
-      else if (phase === 'external') setPhase(outcome?.kind === 'invalid' ? 'invalid' : 'confirm');
-      else setPhase(outcome?.kind === 'partial' ? 'partial' : 'success');
+      if (phase === 'format') {
+        setPhase('external');
+      } else if (phase === 'external') {
+        const outcome = await validation.current!;
+        if (cancelled) return;
+        if (outcome.ok) {
+          setRows(outcome.rows);
+          setPhase('confirm');
+        } else {
+          setErrors(outcome.errors);
+          setPhase('invalid');
+        }
+      } else {
+        const outcome = await creation.current!;
+        if (cancelled) return;
+        setResult(outcome);
+        setPhase(outcome.failed.length > 0 ? 'partial' : 'success');
+      }
     }, 100);
-    return () => clearInterval(id);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [phase]);
 
-  const start = async () => {
+  const start = () => {
     if (!file) return;
-    const n = await countRows(file);
-    setRows(n);
-    setOutcome(resolveOutcome(file, n, scenario));
+    validation.current = service.validate(file);
     setPhase('format');
+  };
+
+  const confirm = () => {
+    if (!file || !advisor) return;
+    creation.current = service.create(file, advisor, rows);
+    setPhase('create');
   };
 
   const step = phase === 'select' ? null : STEP[phase];
@@ -132,6 +158,7 @@ export function ClientImportModal({ initialAdvisor, scenario, onClose }: Props) 
             <div
               className={`bar ${tone}`}
               role="progressbar"
+              aria-label="Import progress"
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(fill)}
@@ -147,6 +174,7 @@ export function ClientImportModal({ initialAdvisor, scenario, onClose }: Props) 
             <p>Choose the advisor, download the template, and upload your file. Make sure the file includes all required fields before continuing.</p>
             <AdvisorSearch
               value={advisor}
+              onSearch={service.searchAdvisors}
               onChange={(a) => {
                 setAdvisor(a);
                 if (!a) setFile(null);
@@ -174,18 +202,16 @@ export function ClientImportModal({ initialAdvisor, scenario, onClose }: Props) 
         {(phase === 'format' || phase === 'external' || phase === 'create') && <RunningScreen message={RUN_TEXT[phase]!} />}
 
         {phase === 'confirm' && advisor && (
-          <ConfirmScreen rows={rows} advisorName={advisor.name} onCancel={onClose} onConfirm={() => setPhase('create')} />
+          <ConfirmScreen rows={rows} advisorName={advisor.name} onCancel={onClose} onConfirm={confirm} />
         )}
 
-        {phase === 'invalid' && outcome?.kind === 'invalid' && <InvalidScreen errors={outcome.errors} onBack={reset} />}
-        {phase === 'success' && outcome?.kind === 'success' && (
-          <SuccessScreen created={outcome.created} onBack={reset} onDone={onClose} />
-        )}
-        {phase === 'partial' && outcome?.kind === 'partial' && (
+        {phase === 'invalid' && <InvalidScreen errors={errors} onBack={reset} />}
+        {phase === 'success' && result && <SuccessScreen created={result.created} onBack={reset} onDone={onClose} />}
+        {phase === 'partial' && result && (
           <PartialScreen
-            total={outcome.total}
-            created={outcome.created}
-            failed={outcome.failed}
+            total={result.created + result.failed.length}
+            created={result.created}
+            failed={result.failed}
             onBack={reset}
             onDone={onClose}
           />

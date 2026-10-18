@@ -1,16 +1,16 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { searchAdvisors } from './mockApi';
 import type { Advisor } from './types';
 
 interface Props {
   value: Advisor | null;
   onChange: (advisor: Advisor | null) => void;
+  onSearch: (query: string) => Promise<Advisor[]>;
 }
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 const MIN_CHARS = 2;
 
-export function AdvisorSearch({ value, onChange }: Props) {
+export function AdvisorSearch({ value, onChange, onSearch }: Props) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Advisor[]>([]);
   const [status, setStatus] = useState<Status>('idle');
@@ -29,7 +29,7 @@ export function AdvisorSearch({ value, onChange }: Props) {
     setStatus('loading');
     setOpen(true);
     try {
-      const found = await searchAdvisors(q);
+      const found = await onSearch(q);
       if (id !== requestId.current) return;
       setResults(found);
       setActive(0);

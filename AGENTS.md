@@ -11,3 +11,7 @@ The five default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`,
 ### Domain docs
 
 Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## Product and design
+
+Product requirements and the rules behind each field are in `docs/prd.md`. Figma frames for each screen, by node ID, are in `docs/design.md`.

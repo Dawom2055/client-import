@@ -1,5 +1,7 @@
 Status: ready-for-agent
 
+Summary: the admin uploads a three-column CSV for a chosen Advisor. A File check (headers, empty file, required fields, duplicate Emails) and then a Format check (names, Email Address) run before anything is created. If both pass, a Review lists every Client and "Finalize and Upload" creates them.
+
 Supersedes, for the parts it covers: `.scratch/client-import/spec.md` (the Import Template, Validation Failure and confirm step) and ticket 07.
 
 ## Problem Statement

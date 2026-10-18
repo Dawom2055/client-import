@@ -1,3 +1,7 @@
+> **Superseded in part by `.scratch/client-import-csv-checks/spec.md`.** Read that spec first for the Import Template (three columns: First Name, Last Name, Email Address), Companions (not created for now), the two checks that replace Validation Failure's single pass, and the Review step that replaces the confirm step. The rest of this spec still holds: Advisor selection, file upload rules, roles, close behaviour, creation, Success and Partial Success.
+>
+> Summary: a button next to "Create New Client" opens a modal where an admin picks an Advisor, downloads the Import Template and uploads one CSV. The whole file is checked before anything is created (ADR 0001). If it passes, the admin confirms and Clients are created, ending in Success or Partial Success.
+
 ## Problem Statement
 
 TRAMS is being decommissioned, and its bulk profile import utility (Clientbase) goes with it. Advisors in ADX would be left with the "Create New Client" button, which creates one Client at a time. Onboarding large groups (corporate accounts, group tours, agency migrations) one record at a time is slow and error-prone, and it blocks the TRAMS decommission and the ACAVE migration.

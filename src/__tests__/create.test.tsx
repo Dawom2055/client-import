@@ -1,18 +1,18 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ImportService } from '../import/types';
 import { createFakeService, SARAH } from '../test/fakes';
-import { addFile, advance, csv, openAsSarah } from '../test/flows';
+import { addFile, advance, csv, csvFile, HEADER, openAsSarah } from '../test/flows';
 import { renderClientsPage } from '../test/render';
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
-async function reachConfirm(service: ImportService = createFakeService()) {
+async function reachConfirm(service: ImportService = createFakeService(), file: File = csv()) {
   const view = renderClientsPage({ service });
   await openAsSarah(view.user);
-  await addFile(view.user, csv());
+  await addFile(view.user, file);
   await view.user.click(screen.getByRole('button', { name: 'Continue' }));
   await advance(1700);
   await advance(2800);
@@ -20,18 +20,47 @@ async function reachConfirm(service: ImportService = createFakeService()) {
 }
 
 const startCreating = async (user: Awaited<ReturnType<typeof reachConfirm>>['user']) => {
-  await user.click(screen.getByRole('button', { name: 'Create 3 clients' }));
+  await user.click(screen.getByRole('button', { name: 'Finalize and Upload' }));
 };
 
 describe('confirming and creating', () => {
-  it('asks for confirmation, naming the number of Clients and the Advisor', async () => {
-    await reachConfirm();
-    expect(screen.getByText(/Step 4 of 5: Confirm/)).toBeInTheDocument();
-    expect(screen.getByText('Your file passed validation')).toBeInTheDocument();
-    expect(screen.getByRole('dialog')).toHaveTextContent('Create 3 clients for Sarah Brown?');
+  it('shows a Review of every Client as a table, with the total and the Advisor', async () => {
+    const file = csvFile([HEADER, 'Jane,Doe,jane@example.com', 'Ann,Lee,ann@example.com', 'Bob,Ray,bob@example.com']);
+    await reachConfirm(createFakeService(), file);
+    expect(screen.getByText(/Step 4 of 5: Review/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Review the client profiles' })).toBeInTheDocument();
+    expect(screen.getByText('Total records: 3')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveTextContent('Sarah Brown');
+
+    const table = screen.getByRole('table', { name: 'Clients to create' });
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
+      '#',
+      'First Name',
+      'Last Name',
+      'Email Address',
+    ]);
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows.map((r) => within(r).getAllByRole('cell').map((c) => c.textContent))).toEqual([
+      ['1', 'Jane', 'Doe', 'jane@example.com'],
+      ['2', 'Ann', 'Lee', 'ann@example.com'],
+      ['3', 'Bob', 'Ray', 'bob@example.com'],
+    ]);
   });
 
-  it('creates nothing when the admin cancels at the confirm step', async () => {
+  it('lists every Client, not just a preview', async () => {
+    await reachConfirm(createFakeService(), csv('big.csv', 40));
+    expect(screen.getByText('Total records: 40')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(41);
+  });
+
+  it('no longer asks to "Create N clients"', async () => {
+    await reachConfirm();
+    expect(screen.queryByText('Your file passed validation')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Create \d+ clients?$/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finalize and Upload' })).toBeInTheDocument();
+  });
+
+  it('creates nothing when the admin cancels at the Review', async () => {
     const create = vi.fn(async () => ({ created: 3, failed: [] }));
     const { user } = await reachConfirm(createFakeService({ create }));
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -39,7 +68,7 @@ describe('confirming and creating', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('creates the Clients for the chosen Advisor once confirmed', async () => {
+  it('creates the Clients for the chosen Advisor once finalised', async () => {
     const create = vi.fn(async () => ({ created: 3, failed: [] }));
     const { user } = await reachConfirm(createFakeService({ create }));
     await startCreating(user);
@@ -67,7 +96,7 @@ describe('confirming and creating', () => {
     await advance(3000);
 
     expect(screen.getByText('Success! Client import completed')).toBeInTheDocument();
-    expect(screen.getByText(/A total of 3 clients and their companions have been successfully created/)).toBeInTheDocument();
+    expect(screen.getByText(/A total of 3 clients have been successfully created/)).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).not.toHaveClass('danger');
   });
 
@@ -92,7 +121,7 @@ describe('confirming and creating', () => {
     expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
   });
 
-  it('closes with Escape on the first step, the confirm step and the result screens', async () => {
+  it('closes with Escape on the first step, the Review and the result screens', async () => {
     const first = renderClientsPage();
     await openAsSarah(first.user);
     await first.user.keyboard('{Escape}');

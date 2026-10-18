@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AdvisorSearch } from './AdvisorSearch';
 import { Dropzone } from './Dropzone';
-import { ConfirmScreen, InvalidScreen, PartialScreen, RunningScreen, SuccessScreen } from './screens';
-import type { Advisor, Check, CreateResult, ImportService, Phase, RuleError, ValidationResult } from './types';
+import { InvalidScreen, PartialScreen, ReviewScreen, RunningScreen, SuccessScreen } from './screens';
+import type { Advisor, Check, CreateResult, ImportClient, ImportService, Phase, RuleError, ValidationResult } from './types';
 
 interface Props {
   initialAdvisor: Advisor | null;
@@ -13,7 +13,7 @@ interface Props {
 const STEP: Record<Exclude<Phase, 'select' | 'invalid'>, { n: number; label: string }> = {
   file: { n: 2, label: 'File check' },
   format: { n: 3, label: 'Format check' },
-  confirm: { n: 4, label: 'Confirm' },
+  confirm: { n: 4, label: 'Review' },
   create: { n: 5, label: 'Finalize and upload' },
   success: { n: 5, label: 'Finalize and upload' },
   partial: { n: 5, label: 'Finalize and upload' },
@@ -43,7 +43,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>('select');
   const [advisor, setAdvisor] = useState<Advisor | null>(initialAdvisor);
   const [file, setFile] = useState<File | null>(null);
-  const [rows, setRows] = useState(0);
+  const [clients, setClients] = useState<ImportClient[]>([]);
   const [errors, setErrors] = useState<RuleError[]>([]);
   const [failedCheck, setFailedCheck] = useState<Check>('file');
   const [result, setResult] = useState<CreateResult | null>(null);
@@ -60,7 +60,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
     setPhase('select');
     setAdvisor(initialAdvisor);
     setFile(null);
-    setRows(0);
+    setClients([]);
     setErrors([]);
     setResult(null);
   };
@@ -97,7 +97,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
         } else if (phase === 'file') {
           setPhase('format');
         } else {
-          setRows(outcome.ok ? outcome.clients.length : 0);
+          setClients(outcome.ok ? outcome.clients : []);
           setPhase('confirm');
         }
       } else {
@@ -121,7 +121,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
 
   const confirm = () => {
     if (!file || !advisor) return;
-    creation.current = service.create(file, advisor, rows);
+    creation.current = service.create(file, advisor, clients.length);
     setPhase('create');
   };
 
@@ -205,7 +205,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
         {(phase === 'file' || phase === 'format' || phase === 'create') && <RunningScreen message={RUN_TEXT[phase]!} />}
 
         {phase === 'confirm' && advisor && (
-          <ConfirmScreen rows={rows} advisorName={advisor.name} onCancel={onClose} onConfirm={confirm} />
+          <ReviewScreen clients={clients} advisorName={advisor.name} onCancel={onClose} onConfirm={confirm} />
         )}
 
         {phase === 'invalid' && <InvalidScreen errors={errors} onBack={reset} />}

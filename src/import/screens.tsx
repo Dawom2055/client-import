@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FailedRecord, RuleError } from './types';
+import type { FailedRecord, ImportClient, RuleError } from './types';
 
 const PREVIEW_ROWS = 10;
 
@@ -12,33 +12,55 @@ export function RunningScreen({ message }: { message: string }) {
   );
 }
 
-export function ConfirmScreen({
-  rows,
+export function ReviewScreen({
+  clients,
   advisorName,
   onCancel,
   onConfirm,
 }: {
-  rows: number;
+  clients: ImportClient[];
   advisorName: string;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const noun = rows === 1 ? 'client' : 'clients';
   return (
     <>
-      <div className="status-line ok">
-        <span className="badge ok" aria-hidden>✓</span>
-        <h3>Your file passed validation</h3>
-      </div>
+      <h3 className="modal-title">Review the client profiles</h3>
       <p>
-        Create {rows} {noun} for <strong>{advisorName}</strong>?
+        Review the client profile data below. These clients will be created for <strong>{advisorName}</strong>. When
+        ready, click ‘Finalize and Upload’ to proceed.
       </p>
+      <div className="panel review-panel">
+        <strong>Total records: {clients.length}</strong>
+        <div className="review-scroll">
+          <table className="review-table" aria-label="Clients to create">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">First Name</th>
+                <th scope="col">Last Name</th>
+                <th scope="col">Email Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map((c, i) => (
+                <tr key={i}>
+                  <td>{i + 1}</td>
+                  <td>{c.firstName}</td>
+                  <td>{c.lastName}</td>
+                  <td>{c.email}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div className="actions">
         <button type="button" className="btn btn-text" onClick={onCancel}>
           Cancel
         </button>
         <button type="button" className="btn btn-primary" onClick={onConfirm}>
-          Create {rows} {noun}
+          Finalize and Upload
         </button>
       </div>
     </>
@@ -106,7 +128,7 @@ export function SuccessScreen({ created, onBack, onDone }: { created: number; on
         <h3>Success! Client import completed</h3>
       </div>
       <p>
-        A total of {created} {created === 1 ? 'client' : 'clients'} and their companions have been successfully created.
+        A total of {created} {created === 1 ? 'client has' : 'clients have'} been successfully created.
       </p>
       <div className="actions push-down">
         <button type="button" className="btn btn-text" onClick={onBack}>

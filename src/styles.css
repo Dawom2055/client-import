@@ -526,3 +526,29 @@ select {
   color: var(--muted);
   font-size: 12px;
 }
+
+.review-panel {
+  max-height: none;
+  overflow: visible;
+}
+.review-scroll {
+  max-height: 260px;
+  overflow: auto;
+  margin-top: 10px;
+}
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.review-table th,
+.review-table td {
+  text-align: left;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.review-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f9f9f9;
+}

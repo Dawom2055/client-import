@@ -27,7 +27,7 @@ async function reachPartialSuccess() {
   await view.user.click(screen.getByRole('button', { name: 'Continue' }));
   await advance(1700);
   await advance(2800);
-  await view.user.click(screen.getByRole('button', { name: 'Create 5 clients' }));
+  await view.user.click(screen.getByRole('button', { name: 'Finalize and Upload' }));
   await advance(3000);
   return view;
 }

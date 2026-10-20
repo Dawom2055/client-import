@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AdvisorSearch } from './AdvisorSearch';
-import { fileFailure, UNREADABLE_MESSAGE } from './checks';
+import { fileFailure, HEADERS, UNREADABLE_MESSAGE } from './checks';
 import { Dropzone } from './Dropzone';
 import { InvalidScreen, PartialScreen, ReviewScreen, RunningScreen, SuccessScreen } from './screens';
 import type {
@@ -38,7 +38,7 @@ const RUN_TEXT: Partial<Record<Phase, string>> = {
   create: 'Creating clients…',
 };
 
-const TEMPLATE = 'First Name,Last Name,Email Address\n';
+const TEMPLATE = `${HEADERS.join(',')}\n`;
 
 function downloadTemplate() {
   const url = URL.createObjectURL(new Blob([TEMPLATE], { type: 'text/csv' }));

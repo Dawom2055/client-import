@@ -1,3 +1,5 @@
+import type { FieldKey } from './fields';
+
 export interface Advisor {
   id: string;
   name: string;
@@ -17,11 +19,8 @@ export interface FailedRecord {
   reason: string;
 }
 
-export interface ImportClient {
-  firstName: string;
-  lastName: string;
-  email: string;
-}
+/** One parsed row of the Import File, keyed by field. */
+export type ImportClient = Record<FieldKey, string>;
 
 /** Which of the two checks failed: the File check (Step 2) or the Format check (Step 3). */
 export type Check = 'file' | 'format';

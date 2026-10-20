@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ImportService } from '../import/types';
 import { createFakeService, SARAH } from '../test/fakes';
-import { addFile, advance, csv, csvFile, HEADER, openAsSarah } from '../test/flows';
+import { addFile, advance, client, csv, csvFile, HEADER, openAsSarah } from '../test/flows';
 import { renderClientsPage } from '../test/render';
 
 afterEach(() => {
@@ -25,7 +25,12 @@ const startCreating = async (user: Awaited<ReturnType<typeof reachConfirm>>['use
 
 describe('confirming and creating', () => {
   it('shows a Review of every Client as a table, with the total and the Advisor', async () => {
-    const file = csvFile([HEADER, 'Jane,Doe,jane@example.com', 'Ann,Lee,ann@example.com', 'Bob,Ray,bob@example.com']);
+    const file = csvFile([
+      HEADER,
+      client(1, 'Jane', 'Doe', 'jane@example.com'),
+      client(2, 'Ann', 'Lee', 'ann@example.com'),
+      client(3, 'Bob', 'Ray', 'bob@example.com'),
+    ]);
     await reachConfirm(createFakeService(), file);
     expect(screen.getByText(/Step 4 of 5: Review/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Review the client profiles' })).toBeInTheDocument();
@@ -53,7 +58,12 @@ describe('confirming and creating', () => {
   });
 
   it('numbers the Review table by Client, not by spreadsheet row', async () => {
-    const file = csvFile([HEADER, 'Jane,Doe,jane@example.com', '', 'Ann,Lee,ann@example.com']);
+    const file = csvFile([
+      HEADER,
+      client(1, 'Jane', 'Doe', 'jane@example.com'),
+      '',
+      client(2, 'Ann', 'Lee', 'ann@example.com'),
+    ]);
     await reachConfirm(createFakeService(), file);
     const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
     expect(rows.map((r) => within(r).getAllByRole('cell')[0].textContent)).toEqual(['1', '2']);

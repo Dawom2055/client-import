@@ -16,7 +16,7 @@ describe('adding a file', () => {
     expect(screen.queryByText(/companion/i)).not.toBeInTheDocument();
   });
 
-  it('downloads an Import Template with exactly First Name, Last Name and Email Address', async () => {
+  it('downloads an Import Template with every column, required ones marked *', async () => {
     const { user } = renderClientsPage();
     await openAsSarah(user);
     const download = captureDownload();

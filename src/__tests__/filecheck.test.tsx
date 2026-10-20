@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EMPTY_MESSAGE, MALFORMED_MESSAGE } from '../import/checks';
 import { createFakeService } from '../test/fakes';
-import { addFile, advance, csvFile, HEADER, openAsSarah } from '../test/flows';
+import { addFile, advance, client, csvFile, HEADER, openAsSarah, row } from '../test/flows';
 import { renderClientsPage } from '../test/render';
 
 afterEach(() => {
@@ -29,8 +29,8 @@ function expectFileLevelFailure(message: string, create: ReturnType<typeof vi.fn
   expect(create).not.toHaveBeenCalled();
 }
 
-const COLUMNS_MESSAGE = 'The file must have exactly these columns: First Name, Last Name, Email Address.';
-const JANE = 'Jane,Doe,jane@example.com';
+const COLUMNS_MESSAGE = `The file must have exactly these columns: ${HEADER.split(',').join(', ')}.`;
+const JANE = client(1, 'Jane', 'Doe', 'jane@example.com');
 
 const expectPassed = () => {
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -54,7 +54,9 @@ describe('File check: the file itself', () => {
   });
 
   it('rejects the columns in the wrong order', async () => {
-    const { create } = await uploadAndCheck(csvFile(['Last Name,First Name,Email Address', JANE]));
+    const { create } = await uploadAndCheck(
+      csvFile([HEADER.replace('First Name*,Middle Name', 'Middle Name,First Name*'), JANE]),
+    );
     expectFileLevelFailure(COLUMNS_MESSAGE, create);
   });
 
@@ -84,7 +86,28 @@ describe('File check: the file itself', () => {
   });
 
   it('accepts the headers in any letter case', async () => {
-    await uploadAndCheck(csvFile(['first name,LAST NAME,Email address', JANE]));
+    await uploadAndCheck(csvFile([HEADER.toLowerCase(), JANE]));
+    expectPassed();
+  });
+
+  it('accepts the headers without the required marker', async () => {
+    await uploadAndCheck(csvFile([HEADER.replaceAll('*', ''), JANE]));
+    expectPassed();
+  });
+
+  it('accepts blank optional cells', async () => {
+    await uploadAndCheck(
+      csvFile([
+        HEADER,
+        row({
+          'Group #': '1',
+          'Profile Type': 'L',
+          'First Name': 'Jane',
+          'Last Name': 'Doe',
+          'Email Address': 'jane@example.com',
+        }),
+      ]),
+    );
     expectPassed();
   });
 
@@ -98,7 +121,7 @@ describe('File check: the file itself', () => {
     expectFileLevelFailure(COLUMNS_MESSAGE, extra.create);
     extra.unmount();
 
-    const blank = await uploadAndCheck(csvFile([HEADER, JANE, ',,,notes']));
+    const blank = await uploadAndCheck(csvFile([HEADER, JANE, `${','.repeat(24)}notes`]));
     expectFileLevelFailure(COLUMNS_MESSAGE, blank.create);
   });
 
@@ -121,7 +144,7 @@ describe('File check: the file itself', () => {
   });
 
   it('accepts quoted cells with commas, a byte-order mark and Windows line endings', async () => {
-    const text = `\uFEFF${HEADER}\r\n"Doe, Jr",Jane,jane@example.com\r\n`;
+    const text = `\uFEFF${HEADER}\r\n${client(1, 'Doe, Jr', 'Jane', 'jane@example.com')}\r\n`;
     await uploadAndCheck(new File([text], 'clients.csv', { type: 'text/csv' }));
     expectPassed();
   });
@@ -138,15 +161,25 @@ describe('File check: the file itself', () => {
 describe('File check: required fields', () => {
   it('reports a blank required field with its row and column', async () => {
     const { create } = await uploadAndCheck(
-      csvFile([HEADER, JANE, 'Jane,Doe,', ',Smith,smith@example.com', 'Ann,,ann@example.com']),
+      csvFile([
+        HEADER,
+        JANE,
+        client(2, 'Jane', 'Doe', ''),
+        client(3, '', 'Smith', 'smith@example.com'),
+        client(4, 'Ann', '', 'ann@example.com'),
+        client(5, 'Bob', 'Ray', 'bob@example.com', { 'Group #': '' }),
+        client(6, 'Cy', 'Ng', 'cy@example.com', { 'Profile Type': '' }),
+      ]),
     );
     expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
-    expect(screen.getByText('Validation failed: 3 issues found in your file')).toBeInTheDocument();
-    expect(screen.getByText('Total errors: 3')).toBeInTheDocument();
+    expect(screen.getByText('Validation failed: 5 issues found in your file')).toBeInTheDocument();
+    expect(screen.getByText('Total errors: 5')).toBeInTheDocument();
     expect(screen.getByText('Required fields missing')).toBeInTheDocument();
     expect(screen.getByText('Row 3: Email Address')).toBeInTheDocument();
     expect(screen.getByText('Row 4: First Name')).toBeInTheDocument();
     expect(screen.getByText('Row 5: Last Name')).toBeInTheDocument();
+    expect(screen.getByText('Row 6: Group #')).toBeInTheDocument();
+    expect(screen.getByText('Row 7: Profile Type')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveClass('danger');
     expect(create).not.toHaveBeenCalled();
   });
@@ -157,11 +190,11 @@ describe('File check: duplicate Emails', () => {
     const { create } = await uploadAndCheck(
       csvFile([
         HEADER,
-        'Jane,Doe,jane@example.com',
-        'Ann,Lee,ann@example.com',
-        'Janet,Dow,  JANE@Example.com ',
-        'Bob,Ray,bob@example.com',
-        'Jan,Dee,jane@example.com',
+        client(1, 'Jane', 'Doe', 'jane@example.com'),
+        client(2, 'Ann', 'Lee', 'ann@example.com'),
+        client(3, 'Janet', 'Dow', '  JANE@Example.com '),
+        client(4, 'Bob', 'Ray', 'bob@example.com'),
+        client(5, 'Jan', 'Dee', 'jane@example.com'),
       ]),
     );
     expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
@@ -175,26 +208,31 @@ describe('File check: duplicate Emails', () => {
   });
 
   it('accepts two different people with the same name but different Emails', async () => {
-    await uploadAndCheck(csvFile([HEADER, 'Jane,Doe,jane1@example.com', 'Jane,Doe,jane2@example.com']));
+    await uploadAndCheck(
+      csvFile([HEADER, client(1, 'Jane', 'Doe', 'jane1@example.com'), client(2, 'Jane', 'Doe', 'jane2@example.com')]),
+    );
     expectPassed();
   });
 
   it('reports required fields and duplicates together in one File check', async () => {
-    await uploadAndCheck(csvFile([HEADER, JANE, JANE, 'Ann,Lee,']));
+    await uploadAndCheck(
+      csvFile([HEADER, JANE, client(2, 'Jane', 'Doe', 'jane@example.com'), client(3, 'Ann', 'Lee', '')]),
+    );
     expect(screen.getByText('Total errors: 3')).toBeInTheDocument();
     expect(screen.getByText('Required fields missing')).toBeInTheDocument();
     expect(screen.getByText('Duplicate Email Address')).toBeInTheDocument();
   });
 
   it('counts blank rows in the row numbers', async () => {
-    await uploadAndCheck(csvFile([HEADER, JANE, '', ',,', JANE]));
+    await uploadAndCheck(csvFile([HEADER, JANE, '', ',,', client(2, 'Jane', 'Doe', 'jane@example.com')]));
     expect(screen.getByText('Row 2: “jane@example.com”')).toBeInTheDocument();
     expect(screen.getByText('Row 5: “jane@example.com”')).toBeInTheDocument();
   });
 });
 
 describe('File check: the error screen', () => {
-  const twelveDuplicates = () => csvFile([HEADER, ...Array.from({ length: 12 }, () => JANE)]);
+  const twelveDuplicates = () =>
+    csvFile([HEADER, ...Array.from({ length: 12 }, (_, i) => client(i + 1, 'Jane', 'Doe', 'jane@example.com'))]);
 
   it('shows ten rows per group and reveals the rest on request', async () => {
     const { user } = await uploadAndCheck(twelveDuplicates());
@@ -207,7 +245,9 @@ describe('File check: the error screen', () => {
   });
 
   it('gives one generic instruction and no per-rule "Fix:" lines', async () => {
-    await uploadAndCheck(csvFile([HEADER, JANE, JANE, 'Ann,Lee,']));
+    await uploadAndCheck(
+      csvFile([HEADER, JANE, client(2, 'Jane', 'Doe', 'jane@example.com'), client(3, 'Ann', 'Lee', '')]),
+    );
     expect(screen.queryByText(/Fix:/)).not.toBeInTheDocument();
     expect(screen.getAllByText(/upload it again/)).toHaveLength(1);
     expect(screen.getByText(/Nothing was created/)).toBeInTheDocument();

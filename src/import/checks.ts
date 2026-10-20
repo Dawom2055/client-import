@@ -1,7 +1,8 @@
 import { FIELDS } from './fields';
 import type { ImportClient, RuleError, ValidationResult } from './types';
 
-export const HEADERS = FIELDS.map((f) => f.header);
+/** The Import Template's header row, with required columns marked `*`. */
+export const HEADERS = FIELDS.map((f) => (f.required ? `${f.header}*` : f.header));
 const EMAIL = FIELDS.findIndex((f) => f.key === 'email');
 
 export const COLUMNS_MESSAGE = `The file must have exactly these columns: ${HEADERS.join(', ')}.`;
@@ -86,7 +87,8 @@ export function checkImportFile(text: string): ValidationResult {
   const [rawHeader = [], ...body] = parsed;
   const header = trimTrailingEmpty(rawHeader);
   const matches =
-    header.length === HEADERS.length && header.every((h, i) => h.trim().toLowerCase() === HEADERS[i].toLowerCase());
+    header.length === FIELDS.length &&
+    header.every((h, i) => h.trim().replace(/\*$/, '').trimEnd().toLowerCase() === FIELDS[i].header.toLowerCase());
   if (!matches) return fileFailure(COLUMNS_MESSAGE);
 
   if (body.some((cells) => trimTrailingEmpty(cells).length > HEADERS.length)) return fileFailure(COLUMNS_MESSAGE);

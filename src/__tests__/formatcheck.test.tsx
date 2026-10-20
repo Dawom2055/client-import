@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createFakeService } from '../test/fakes';
-import { addFile, advance, csvFile, HEADER, openAsSarah } from '../test/flows';
+import { addFile, advance, client, csvFile, HEADER, openAsSarah } from '../test/flows';
 import { renderClientsPage } from '../test/render';
 
 afterEach(() => {
@@ -11,7 +11,7 @@ afterEach(() => {
 const NAME_RULE = (field: string) =>
   `${field} must be 50 characters or fewer and can only contain letters, spaces, and - ' . , characters.`;
 const EMAIL_RULE = 'Email Address must be a valid email address of 254 characters or fewer.';
-const JANE = 'Jane,Doe,jane@example.com';
+const JANE = client(1, 'Jane', 'Doe', 'jane@example.com');
 
 /** Uploads `file` for Sarah Brown and lets both checks finish. */
 async function uploadAndCheck(file: File) {
@@ -33,7 +33,7 @@ const expectPassed = () => {
 describe('Format check: names', () => {
   it("reports a name with a character other than letters, spaces and - ' . ,", async () => {
     const { create } = await uploadAndCheck(
-      csvFile([HEADER, JANE, 'J4ne,Doe,a@example.com', 'Ann,Lee#,b@example.com']),
+      csvFile([HEADER, JANE, client(2, 'J4ne', 'Doe', 'a@example.com'), client(3, 'Ann', 'Lee#', 'b@example.com')]),
     );
     expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
     expect(screen.getByText('Total errors: 2')).toBeInTheDocument();
@@ -48,24 +48,28 @@ describe('Format check: names', () => {
 
   it("accepts accented letters, spaces and - ' . ,", async () => {
     await uploadAndCheck(
-      csvFile([HEADER, `"José Mary-Ann",O'Brien Jr.,jose@example.com`, 'Zoë,"Smith, III",zoe@example.com']),
+      csvFile([
+        HEADER,
+        client(1, 'José Mary-Ann', "O'Brien Jr.", 'jose@example.com'),
+        client(2, 'Zoë', 'Smith, III', 'zoe@example.com'),
+      ]),
     );
     expectPassed();
   });
 
   it('accepts a name written with combining accents', async () => {
-    await uploadAndCheck(csvFile([HEADER, `${'Jose\u0301'},Garci\u0301a,jose@example.com`]));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'Jose\u0301', 'Garci\u0301a', 'jose@example.com')]));
     expectPassed();
   });
 
   it('accepts a name of exactly 50 characters and reports one of 51', async () => {
-    await uploadAndCheck(csvFile([HEADER, `${'a'.repeat(50)},Doe,fifty@example.com`]));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'a'.repeat(50), 'Doe', 'fifty@example.com')]));
     expectPassed();
   });
 
   it('reports a name of 51 characters with the offending value', async () => {
     const long = 'a'.repeat(51);
-    await uploadAndCheck(csvFile([HEADER, `${long},Doe,long@example.com`]));
+    await uploadAndCheck(csvFile([HEADER, client(1, long, 'Doe', 'long@example.com')]));
     expect(screen.getByText(NAME_RULE('First Name'))).toBeInTheDocument();
     expect(screen.getByText(`Row 2: “${long}”`)).toBeInTheDocument();
   });
@@ -82,13 +86,13 @@ describe('Format check: Email Address', () => {
     'jane@exa_mple.com',
     'jane!@example.com',
   ])('reports %s as not a valid email address', async (email) => {
-    await uploadAndCheck(csvFile([HEADER, `Jane,Doe,${email}`]));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', email)]));
     expect(screen.getByText(EMAIL_RULE)).toBeInTheDocument();
     expect(screen.getByText(`Row 2: “${email}”`)).toBeInTheDocument();
   });
 
   it('accepts letters, digits and . _ % + - before the @ and . - in the domain', async () => {
-    await uploadAndCheck(csvFile([HEADER, 'Jane,Doe,j.a_n%e+1-x@mail-box.example.co.uk']));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', 'j.a_n%e+1-x@mail-box.example.co.uk')]));
     expectPassed();
   });
 
@@ -96,27 +100,27 @@ describe('Format check: Email Address', () => {
     const local = 'a'.repeat(64);
     const email = `${local}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(57)}.com`;
     expect(email).toHaveLength(254);
-    await uploadAndCheck(csvFile([HEADER, `Jane,Doe,${email}`]));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', email)]));
     expectPassed();
   });
 
   it('reports an email address over 254 characters', async () => {
     const long = `${'a'.repeat(250)}@example.com`;
-    await uploadAndCheck(csvFile([HEADER, `Jane,Doe,${long}`]));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', long)]));
     expect(screen.getByText(EMAIL_RULE)).toBeInTheDocument();
   });
 });
 
 describe('Format check: row numbers', () => {
   it('numbers rows like the spreadsheet, counting blank rows', async () => {
-    await uploadAndCheck(csvFile([HEADER, JANE, '', 'Ann,Lee,bad-email']));
+    await uploadAndCheck(csvFile([HEADER, JANE, '', client(2, 'Ann', 'Lee', 'bad-email')]));
     expect(screen.getByText('Row 4: “bad-email”')).toBeInTheDocument();
   });
 });
 
 describe('Format check: order', () => {
   it('never shows format errors when the File check fails', async () => {
-    await uploadAndCheck(csvFile([HEADER, 'J4ne,Doe,', 'Ann,Lee,not-an-email']));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'J4ne', 'Doe', ''), client(2, 'Ann', 'Lee', 'not-an-email')]));
     expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
     expect(screen.getByText('Required fields missing')).toBeInTheDocument();
     expect(screen.queryByText(EMAIL_RULE)).not.toBeInTheDocument();
@@ -124,7 +128,7 @@ describe('Format check: order', () => {
   });
 
   it('shows the Format check only after the File check passes, with no "Fix:" lines', async () => {
-    await uploadAndCheck(csvFile([HEADER, 'J4ne,Doe,not-an-email']));
+    await uploadAndCheck(csvFile([HEADER, client(1, 'J4ne', 'Doe', 'not-an-email')]));
     expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
     expect(screen.queryByText(/Fix:/)).not.toBeInTheDocument();
     expect(screen.getByText('Total errors: 2')).toBeInTheDocument();

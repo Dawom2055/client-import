@@ -21,11 +21,38 @@ export interface Field {
   message: string;
 }
 
+const anything = () => true;
+
+/** A column with no Format check rule yet. */
+const free = <K extends string>(key: K, header: string) =>
+  ({ key, header, required: false, isValid: anything, message: '' }) as const;
+
 /** Every column of the Import Template, in order. The template, the File check and the Format check all read from this. */
 export const FIELDS = [
+  { key: 'group', header: 'Group #', required: true, isValid: anything, message: '' },
+  free('relationship', 'Relationship to Client'),
+  { key: 'profileType', header: 'Profile Type', required: true, isValid: anything, message: '' },
+  free('title', 'Title'),
+  free('corporateName', 'Corporate Name'),
   { key: 'firstName', header: 'First Name', required: true, isValid: validName, message: nameRule('First Name') },
+  free('middleName', 'Middle Name'),
   { key: 'lastName', header: 'Last Name', required: true, isValid: validName, message: nameRule('Last Name') },
+  free('gender', 'Gender'),
+  free('dateOfBirth', 'Date of Birth'),
+  free('nationality', 'Nationality'),
+  free('emailDescription', 'Email Description'),
   { key: 'email', header: 'Email Address', required: true, isValid: validEmail, message: EMAIL_RULE },
+  free('phoneDescription', 'Phone Description'),
+  free('phone', 'Primary Phone Number'),
+  free('address1', 'Address Line 1'),
+  free('address2', 'Address Line 2'),
+  free('city', 'City'),
+  free('state', 'State/Province'),
+  free('zip', 'Zip/Postal Code'),
+  free('country', 'Country'),
+  free('passportNumber', 'Passport Number'),
+  free('passportCountry', 'Passport Issuing Country'),
+  free('passportExpiry', 'Passport Expiry Date'),
 ] as const satisfies readonly Field[];
 
 export type FieldKey = (typeof FIELDS)[number]['key'];

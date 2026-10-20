@@ -8,8 +8,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const NAME_RULE = (field: string) =>
-  `${field} must be 50 characters or fewer and can only contain letters, spaces, and - ' . , characters.`;
+const NAME_RULE = (field: string, max: number) =>
+  `${field} must be ${max} characters or fewer and can only contain letters, spaces, and - ' . , characters.`;
 const EMAIL_RULE = 'Email Address must be a valid email address of 254 characters or fewer.';
 const JANE = client(1, 'Jane', 'Doe', 'jane@example.com');
 
@@ -37,41 +37,56 @@ describe('Format check: names', () => {
     );
     expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
     expect(screen.getByText('Total errors: 2')).toBeInTheDocument();
-    expect(screen.getByText(NAME_RULE('First Name'))).toBeInTheDocument();
+    expect(screen.getByText(NAME_RULE('First Name', 20))).toBeInTheDocument();
     expect(screen.getByText('Row 3: “J4ne”')).toBeInTheDocument();
-    expect(screen.getByText(NAME_RULE('Last Name'))).toBeInTheDocument();
+    expect(screen.getByText(NAME_RULE('Last Name', 29))).toBeInTheDocument();
     expect(screen.getByText('Row 4: “Lee#”')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveClass('danger');
     expect(screen.getByText(/Nothing was created/)).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
   });
 
-  it("accepts accented letters, spaces and - ' . ,", async () => {
+  it("accepts the letters A to Z, spaces and - ' . ,", async () => {
     await uploadAndCheck(
       csvFile([
         HEADER,
-        client(1, 'José Mary-Ann', "O'Brien Jr.", 'jose@example.com'),
-        client(2, 'Zoë', 'Smith, III', 'zoe@example.com'),
+        client(1, 'Mary-Ann', "O'Brien Jr.", 'mary@example.com', { 'Middle Name': 'Lee, Jo' }),
+        client(2, 'Zoe', 'Smith, III', 'zoe@example.com'),
       ]),
     );
     expectPassed();
   });
 
-  it('accepts a name written with combining accents', async () => {
-    await uploadAndCheck(csvFile([HEADER, client(1, 'Jose\u0301', 'Garci\u0301a', 'jose@example.com')]));
+  it.each(['José', 'Zoë', 'Jose\u0301'])('reports the accented name %s', async (name) => {
+    await uploadAndCheck(csvFile([HEADER, client(1, name, 'Doe', 'jose@example.com')]));
+    expect(screen.getByText(NAME_RULE('First Name', 20))).toBeInTheDocument();
+  });
+
+  it.each([
+    ['First Name', 20],
+    ['Middle Name', 30],
+    ['Last Name', 29],
+  ] as const)('accepts a %s of exactly %i characters', async (column, max) => {
+    await uploadAndCheck(
+      csvFile([HEADER, client(1, 'Jane', 'Doe', 'jane@example.com', { [column]: 'a'.repeat(max) })]),
+    );
     expectPassed();
   });
 
-  it('accepts a name of exactly 50 characters and reports one of 51', async () => {
-    await uploadAndCheck(csvFile([HEADER, client(1, 'a'.repeat(50), 'Doe', 'fifty@example.com')]));
-    expectPassed();
-  });
-
-  it('reports a name of 51 characters with the offending value', async () => {
-    const long = 'a'.repeat(51);
-    await uploadAndCheck(csvFile([HEADER, client(1, long, 'Doe', 'long@example.com')]));
-    expect(screen.getByText(NAME_RULE('First Name'))).toBeInTheDocument();
+  it.each([
+    ['First Name', 20],
+    ['Middle Name', 30],
+    ['Last Name', 29],
+  ] as const)('reports a %s over %i characters with the offending value', async (column, max) => {
+    const long = 'a'.repeat(max + 1);
+    await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', 'jane@example.com', { [column]: long })]));
+    expect(screen.getByText(NAME_RULE(column, max))).toBeInTheDocument();
     expect(screen.getByText(`Row 2: “${long}”`)).toBeInTheDocument();
+  });
+
+  it('reports a Middle Name with a digit', async () => {
+    await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', 'jane@example.com', { 'Middle Name': 'J2' })]));
+    expect(screen.getByText(NAME_RULE('Middle Name', 30))).toBeInTheDocument();
   });
 });
 
@@ -124,7 +139,7 @@ describe('Format check: order', () => {
     expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
     expect(screen.getByText('Required fields missing')).toBeInTheDocument();
     expect(screen.queryByText(EMAIL_RULE)).not.toBeInTheDocument();
-    expect(screen.queryByText(NAME_RULE('First Name'))).not.toBeInTheDocument();
+    expect(screen.queryByText(NAME_RULE('First Name', 20))).not.toBeInTheDocument();
   });
 
   it('shows the Format check only after the File check passes, with no "Fix:" lines', async () => {

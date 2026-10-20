@@ -8,12 +8,17 @@ afterEach(() => {
 });
 
 describe('adding a file', () => {
-  it('offers a single Import Template for Clients', async () => {
+  it('offers a single Import Template for Clients and Companions', async () => {
     const { user } = renderClientsPage();
     await openAsSarah(user);
     expect(screen.getAllByRole('button', { name: /Download .*Template/ })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Download Import Template' })).toBeInTheDocument();
-    expect(screen.queryByText(/companion/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Use the template to list one Client or Companion per row. Rows with the same Group # travel together: ' +
+          'one Client row, with Relationship to Client left blank, and any Companion rows.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('downloads an Import Template with every column, required ones marked *', async () => {

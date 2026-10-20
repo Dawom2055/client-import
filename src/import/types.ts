@@ -19,13 +19,13 @@ export interface FailedRecord {
   reason: string;
 }
 
-/** One parsed row of the Import File, keyed by field. */
-export type ImportClient = Record<FieldKey, string>;
+/** One parsed row of the Import File, keyed by field: a Client row, or a Companion row linked by its Group #. */
+export type ImportRow = Record<FieldKey, string> & { kind: 'client' | 'companion' };
 
 /** Which of the two checks failed: the File check (Step 2) or the Format check (Step 3). */
 export type Check = 'file' | 'format';
 
-export type ValidationResult = { ok: true; clients: ImportClient[] } | { ok: false; check: Check; errors: RuleError[] };
+export type ValidationResult = { ok: true; rows: ImportRow[] } | { ok: false; check: Check; errors: RuleError[] };
 
 export interface CreateResult {
   created: number;
@@ -37,7 +37,7 @@ export interface ImportService {
   searchAdvisors(query: string): Promise<Advisor[]>;
   /** Checks the whole Import File; nothing is created. */
   validate(file: File): Promise<ValidationResult>;
-  create(file: File, advisor: Advisor, rows: number): Promise<CreateResult>;
+  create(file: File, advisor: Advisor, rows: ImportRow[]): Promise<CreateResult>;
 }
 
 export type Scenario = 'auto' | 'success' | 'partial';

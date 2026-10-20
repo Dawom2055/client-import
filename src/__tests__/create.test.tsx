@@ -42,7 +42,7 @@ describe('confirming and creating', () => {
       within(table)
         .getAllByRole('columnheader')
         .map((h) => h.textContent),
-    ).toEqual(['#', 'First Name', 'Last Name', 'Email Address']);
+    ).toEqual(['#', 'Group #', 'Relationship to Client', 'First Name', 'Last Name', 'Email Address']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(
       rows.map((r) =>
@@ -51,9 +51,9 @@ describe('confirming and creating', () => {
           .map((c) => c.textContent),
       ),
     ).toEqual([
-      ['1', 'Jane', 'Doe', 'jane@example.com'],
-      ['2', 'Ann', 'Lee', 'ann@example.com'],
-      ['3', 'Bob', 'Ray', 'bob@example.com'],
+      ['1', '1', '', 'Jane', 'Doe', 'jane@example.com'],
+      ['2', '2', '', 'Ann', 'Lee', 'ann@example.com'],
+      ['3', '3', '', 'Bob', 'Ray', 'bob@example.com'],
     ]);
   });
 
@@ -94,7 +94,11 @@ describe('confirming and creating', () => {
     const create = vi.fn(async () => ({ created: 3, failed: [] }));
     const { user } = await reachConfirm(createFakeService({ create }));
     await startCreating(user);
-    expect(create).toHaveBeenCalledWith(expect.any(File), SARAH, 3);
+    expect(create).toHaveBeenCalledWith(expect.any(File), SARAH, [
+      expect.objectContaining({ kind: 'client', email: 'jane1@example.com' }),
+      expect.objectContaining({ kind: 'client', email: 'jane2@example.com' }),
+      expect.objectContaining({ kind: 'client', email: 'jane3@example.com' }),
+    ]);
   });
 
   it('shows progress while creating and does not let the modal be closed', async () => {

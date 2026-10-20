@@ -1,5 +1,5 @@
 import { FIELDS } from './fields';
-import type { ImportClient, RuleError, ValidationResult } from './types';
+import type { ImportRow, RuleError, ValidationResult } from './types';
 
 /** The Import Template's header row, with required columns marked `*`. */
 export const HEADERS = FIELDS.map((f) => (f.required ? `${f.header}*` : f.header));
@@ -9,6 +9,10 @@ export const COLUMNS_MESSAGE = `The file must have exactly these columns: ${HEAD
 export const EMPTY_MESSAGE = 'The file has no Clients. Add at least one row below the header.';
 export const REQUIRED_RULE = 'Required fields missing';
 export const DUPLICATE_RULE = 'Duplicate Email Address';
+export const GROUP_NUMBER_RULE = 'Group # must be a whole number of 1 or more.';
+export const ONE_CLIENT_RULE = 'Each Group must have only one Client.';
+export const NO_CLIENT_RULE =
+  'Each Group must have a Client. Companions must share a Group # with one row that has no Relationship to Client.';
 export const UNREADABLE_MESSAGE = 'The file could not be read.';
 export const MALFORMED_MESSAGE = 'The file is not a valid CSV.';
 
@@ -69,14 +73,55 @@ export const fileFailure = (rule: string): ValidationResult => ({
   errors: [{ rule, rows: [] }],
 });
 
+interface Row {
+  /** The spreadsheet row number, with the header as row 1. */
+  row: number;
+  cells: string[];
+  record: ImportRow;
+}
+
+const isGroupNumber = (v: string) => /^[0-9]+$/.test(v) && Number(v) >= 1;
+
+/** The File check's Group rules: every Group has exactly one Client row. Every row of a failing Group is reported. */
+function groupCheck(rows: Row[]): RuleError[] {
+  const groups = new Map<number, Row[]>();
+  for (const r of rows) {
+    if (!isGroupNumber(r.record.group)) continue;
+    const n = Number(r.record.group);
+    groups.set(n, [...(groups.get(n) ?? []), r]);
+  }
+  const offenders = (fails: (members: Row[]) => boolean) =>
+    [...groups.entries()]
+      .filter(([, members]) => fails(members))
+      .flatMap(([n, members]) => members.map(({ row }) => ({ row, detail: `Group ${n}` })))
+      .sort((a, b) => a.row - b.row);
+  const clientCount = (members: Row[]) => members.filter((m) => m.record.kind === 'client').length;
+
+  return [
+    {
+      rule: GROUP_NUMBER_RULE,
+      rows: rows
+        .filter(({ record }) => record.group !== '' && !isGroupNumber(record.group))
+        .map(({ row, record }) => ({ row, value: record.group })),
+    },
+    { rule: ONE_CLIENT_RULE, rows: offenders((m) => clientCount(m) > 1) },
+    { rule: NO_CLIENT_RULE, rows: offenders((m) => clientCount(m) === 0) },
+  ].filter((e) => e.rows.length > 0);
+}
+
 /** The Format check: the content of each filled-in cell, run only once the File check has passed. */
-function formatCheck(rows: { row: number; cells: string[] }[]): RuleError[] {
+function formatCheck(rows: Row[]): RuleError[] {
   return FIELDS.map((field, c) => ({
     rule: field.message,
     rows: rows
       .filter(({ cells }) => cells[c] !== '' && !field.isValid(cells[c]))
       .map(({ row, cells }) => ({ row, value: cells[c] })),
   })).filter((e) => e.rows.length > 0);
+}
+
+function toRecord(cells: string[]): ImportRow {
+  const values = Object.fromEntries(FIELDS.map((field, c) => [field.key, cells[c]])) as Omit<ImportRow, 'kind'>;
+  return { ...values, kind: values.relationship === '' ? 'client' : 'companion' };
 }
 
 /** Runs the File check, then the Format check, on the text of an Import File. Nothing is created. */
@@ -94,13 +139,11 @@ export function checkImportFile(text: string): ValidationResult {
   if (body.some((cells) => trimTrailingEmpty(cells).length > HEADERS.length)) return fileFailure(COLUMNS_MESSAGE);
 
   // Row numbers are the spreadsheet's, with the header as row 1; blank rows are skipped but still counted.
-  const rows = body
-    .map((cells, i) => ({
-      row: i + 2,
-      cells: HEADERS.map((_, c) => (cells[c] ?? '').trim().normalize('NFC')),
-      blank: isBlank(cells),
-    }))
-    .filter((r) => !r.blank);
+  const rows: Row[] = body.flatMap((raw, i) => {
+    if (isBlank(raw)) return [];
+    const cells = FIELDS.map((_, c) => (raw[c] ?? '').trim().normalize('NFC'));
+    return [{ row: i + 2, cells, record: toRecord(cells) }];
+  });
   if (rows.length === 0) return fileFailure(EMPTY_MESSAGE);
 
   const missing = rows.flatMap(({ row, cells }) =>
@@ -120,13 +163,11 @@ export function checkImportFile(text: string): ValidationResult {
   const errors: RuleError[] = [];
   if (missing.length > 0) errors.push({ rule: REQUIRED_RULE, rows: missing });
   if (duplicates.length > 0) errors.push({ rule: DUPLICATE_RULE, rows: duplicates });
+  errors.push(...groupCheck(rows));
   if (errors.length > 0) return { ok: false, check: 'file', errors };
 
   const formatErrors = formatCheck(rows);
   if (formatErrors.length > 0) return { ok: false, check: 'format', errors: formatErrors };
 
-  const clients = rows.map(
-    ({ cells }) => Object.fromEntries(FIELDS.map((field, c) => [field.key, cells[c]])) as ImportClient,
-  );
-  return { ok: true, clients };
+  return { ok: true, rows: rows.map(({ record }) => record) };
 }

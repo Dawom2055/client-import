@@ -21,7 +21,7 @@ export function createFakeService(overrides: Partial<ImportService> = {}): Impor
     searchAdvisors: async (query) =>
       FAKE_ADVISORS.filter((a) => a.name.toLowerCase().includes(query.trim().toLowerCase())),
     validate: async (file) => checkImportFile(await file.text()),
-    create: async (_file, _advisor, rows) => ({ created: rows, failed: [] }),
+    create: async (_file, _advisor, rows) => ({ created: rows.length, failed: [] }),
     ...overrides,
   };
 }

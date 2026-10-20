@@ -23,6 +23,14 @@ export interface Field {
 
 const anything = () => true;
 
+/** A pick list: the value must be one of `options`, ignoring letter case. */
+const oneOf =
+  (...options: string[]) =>
+  (v: string) =>
+    options.some((o) => o.toLowerCase() === v.toLowerCase());
+
+export const RELATIONSHIPS = ['Spouse', 'Partner', 'Child', 'Parent', 'Sibling', 'Friend', 'Other'];
+
 /** A column with no Format check rule yet. */
 const free = <K extends string>(key: K, header: string) =>
   ({ key, header, required: false, isValid: anything, message: '' }) as const;
@@ -30,7 +38,13 @@ const free = <K extends string>(key: K, header: string) =>
 /** Every column of the Import Template, in order. The template, the File check and the Format check all read from this. */
 export const FIELDS = [
   { key: 'group', header: 'Group #', required: true, isValid: anything, message: '' },
-  free('relationship', 'Relationship to Client'),
+  {
+    key: 'relationship',
+    header: 'Relationship to Client',
+    required: false,
+    isValid: oneOf(...RELATIONSHIPS),
+    message: `Relationship to Client must be one of: ${RELATIONSHIPS.join(', ')}.`,
+  },
   { key: 'profileType', header: 'Profile Type', required: true, isValid: anything, message: '' },
   free('title', 'Title'),
   free('corporateName', 'Corporate Name'),

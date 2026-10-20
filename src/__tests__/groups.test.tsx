@@ -1,33 +1,15 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFakeService, SARAH } from '../test/fakes';
-import { addFile, advance, client, csvFile, HEADER, openAsSarah } from '../test/flows';
-import { renderClientsPage } from '../test/render';
+import { SARAH } from '../test/fakes';
+import { client, expectReachedReview, uploadRows } from '../test/flows';
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Uploads `lines` for Sarah Brown and lets both checks finish. */
-async function uploadAndCheck(lines: string[]) {
-  const create = vi.fn(async () => ({ created: 0, failed: [] }));
-  const view = renderClientsPage({ service: createFakeService({ create }) });
-  await openAsSarah(view.user);
-  await addFile(view.user, csvFile([HEADER, ...lines]));
-  await view.user.click(screen.getByRole('button', { name: 'Continue' }));
-  await advance(1700); // File check
-  await advance(2800); // Format check
-  return { ...view, create };
-}
-
 /** A Companion row in `group`, linked to that Group's Client. */
 const companion = (group: number, first: string, email: string, relationship = 'Spouse') =>
   client(group, first, 'Doe', email, { 'Relationship to Client': relationship });
-
-const expectPassed = () => {
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  expect(screen.getByText(/Step 4 of 5/)).toBeInTheDocument();
-};
 
 const reviewRows = () =>
   within(screen.getByRole('table'))
@@ -48,12 +30,12 @@ const RELATIONSHIP_RULE =
 
 describe('Client rows and Companion rows', () => {
   it('creates a Client and its Companions from one Group, listing both in the Review', async () => {
-    const { user, create } = await uploadAndCheck([
+    const { user, create } = await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       companion(1, 'John', 'john@example.com', 'Spouse'),
       companion(1, 'Amy', 'amy@example.com', 'Child'),
     ]);
-    expectPassed();
+    expectReachedReview();
     expect(screen.getByText('Total records: 3')).toBeInTheDocument();
     expect(
       within(screen.getByRole('table'))
@@ -75,31 +57,31 @@ describe('Client rows and Companion rows', () => {
   });
 
   it('accepts a Client on their own as a Group of one', async () => {
-    await uploadAndCheck([client(1, 'Jane', 'Doe', 'jane@example.com'), client(2, 'Bob', 'Ray', 'bob@example.com')]);
-    expectPassed();
+    await uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com'), client(2, 'Bob', 'Ray', 'bob@example.com')]);
+    expectReachedReview();
   });
 
   it("accepts a Group's rows anywhere in the file and Group numbers with gaps", async () => {
-    await uploadAndCheck([
+    await uploadRows([
       companion(7, 'John', 'john@example.com'),
       client(2, 'Bob', 'Ray', 'bob@example.com'),
       client(7, 'Jane', 'Doe', 'jane@example.com'),
       companion(2, 'Kim', 'kim@example.com', 'Friend'),
     ]);
-    expectPassed();
+    expectReachedReview();
   });
 
   it('accepts every Relationship to Client in any letter case', async () => {
     const relationships = ['spouse', 'PARTNER', 'Child', 'parent', 'Sibling', 'friend', 'Other'];
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       ...relationships.map((r, i) => companion(1, 'Kid', `kid${i}@example.com`, r)),
     ]);
-    expectPassed();
+    expectReachedReview();
   });
 
   it('reports a Relationship to Client that is not in the list', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       companion(1, 'John', 'john@example.com', 'Husband'),
     ]);
@@ -111,7 +93,7 @@ describe('Client rows and Companion rows', () => {
 
 describe('File check: Groups', () => {
   it.each(['abc', '0', '-1', '1.5'])('reports a Group # of %s', async (group) => {
-    const { create } = await uploadAndCheck([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Group #': group })]);
+    const { create } = await uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Group #': group })]);
     expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
     expect(screen.getByText(GROUP_NUMBER_RULE)).toBeInTheDocument();
     expect(screen.getByText(`Row 2: “${group}”`)).toBeInTheDocument();
@@ -119,7 +101,7 @@ describe('File check: Groups', () => {
   });
 
   it('reports every row of a Group with two Clients', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       client(2, 'Bob', 'Ray', 'bob@example.com'),
       client(1, 'Ann', 'Lee', 'ann@example.com'),
@@ -135,7 +117,7 @@ describe('File check: Groups', () => {
   });
 
   it('reports every row of a Group with Companions but no Client', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       companion(2, 'John', 'john@example.com'),
       companion(2, 'Amy', 'amy@example.com', 'Child'),
@@ -147,7 +129,7 @@ describe('File check: Groups', () => {
   });
 
   it('treats Group numbers written differently, such as 01 and 1, as the same Group', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       client(1, 'Ann', 'Lee', 'ann@example.com', { 'Group #': '01' }),
     ]);

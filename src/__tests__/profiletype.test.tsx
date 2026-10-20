@@ -1,29 +1,10 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFakeService } from '../test/fakes';
-import { addFile, advance, client, csvFile, HEADER, openAsSarah } from '../test/flows';
-import { renderClientsPage } from '../test/render';
+import { client, expectReachedReview, uploadRows } from '../test/flows';
 
 afterEach(() => {
   vi.useRealTimers();
 });
-
-/** Uploads `lines` for Sarah Brown and lets both checks finish. */
-async function uploadAndCheck(lines: string[]) {
-  const create = vi.fn(async () => ({ created: 0, failed: [] }));
-  const view = renderClientsPage({ service: createFakeService({ create }) });
-  await openAsSarah(view.user);
-  await addFile(view.user, csvFile([HEADER, ...lines]));
-  await view.user.click(screen.getByRole('button', { name: 'Continue' }));
-  await advance(1700); // File check
-  await advance(2800); // Format check
-  return { ...view, create };
-}
-
-const expectPassed = () => {
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  expect(screen.getByText(/Step 4 of 5/)).toBeInTheDocument();
-};
 
 /** A Corporate Client row for Acme in `group`. */
 const corporate = (group: number, first: string, email: string) =>
@@ -43,23 +24,23 @@ const CORPORATE_NAME_RULE =
 
 describe('Profile Type', () => {
   it('accepts L and C in any letter case', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'l' }),
       client(2, 'Bob', 'Ray', 'bob@example.com', { 'Profile Type': 'c', 'Corporate Name': 'Acme' }),
       companion(2, 'Kim', 'kim@example.com', 'C'),
     ]);
-    expectPassed();
+    expectReachedReview();
   });
 
   it('reports a Profile Type other than L or C', async () => {
-    await uploadAndCheck([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'Leisure' })]);
+    await uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'Leisure' })]);
     expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
     expect(screen.getByText(PROFILE_TYPE_RULE)).toBeInTheDocument();
     expect(screen.getByText('Row 2: “Leisure”')).toBeInTheDocument();
   });
 
   it("reports only the Companion rows whose Profile Type differs from their Client's", async () => {
-    await uploadAndCheck([
+    await uploadRows([
       corporate(1, 'Jane', 'jane@example.com'),
       companion(1, 'John', 'john@example.com', 'L'),
       companion(1, 'Amy', 'amy@example.com', 'c'),
@@ -71,7 +52,7 @@ describe('Profile Type', () => {
   });
 
   it('does not compare Profile Types in a Group that has no single Client', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       corporate(1, 'Ann', 'ann@example.com'),
       companion(1, 'John', 'john@example.com', 'C'),
@@ -83,7 +64,7 @@ describe('Profile Type', () => {
 
 describe('one clear message for a bad Profile Type or Group #', () => {
   it('reports only the Profile Type when a bad one makes a Group look like it has two Clients', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       client(1, 'Ann', 'Lee', 'ann@example.com', { 'Profile Type': 'X' }),
     ]);
@@ -93,7 +74,7 @@ describe('one clear message for a bad Profile Type or Group #', () => {
   });
 
   it("reports only the Profile Type when the Group's only Client has a bad one", async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'X' }),
       companion(1, 'John', 'john@example.com', 'L'),
     ]);
@@ -103,7 +84,7 @@ describe('one clear message for a bad Profile Type or Group #', () => {
   });
 
   it('reports only the missing Profile Type, not the Group, when it is blank', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com'),
       client(1, 'Ann', 'Lee', 'ann@example.com', { 'Profile Type': '' }),
     ]);
@@ -112,16 +93,14 @@ describe('one clear message for a bad Profile Type or Group #', () => {
   });
 
   it('does not check the Corporate Name of a row whose Group # is not valid', async () => {
-    await uploadAndCheck([
-      client(1, 'Jane', 'Doe', 'jane@example.com', { 'Group #': 'abc', 'Corporate Name': 'Acme' }),
-    ]);
+    await uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Group #': 'abc', 'Corporate Name': 'Acme' })]);
     expect(screen.getByText('Group # must be a whole number of 1 or more.')).toBeInTheDocument();
     expect(screen.queryByText(LEISURE_CORPORATE_RULE)).not.toBeInTheDocument();
     expect(screen.getByText('Total errors: 1')).toBeInTheDocument();
   });
 
   it('does not check the Corporate Name of a row whose Profile Type is not valid', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'X', 'Corporate Name': 'Acme' }),
       client(1, 'John', 'Doe', 'john@example.com', {
         'Relationship to Client': 'Spouse',
@@ -136,7 +115,7 @@ describe('one clear message for a bad Profile Type or Group #', () => {
 
 describe('Corporate Name', () => {
   it('reports a Corporate Client row with no Corporate Name', async () => {
-    const { create } = await uploadAndCheck([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'C' })]);
+    const { create } = await uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'C' })]);
     expect(screen.getByText(/Step 2 of 5: File check/)).toBeInTheDocument();
     expect(screen.getByText(CORPORATE_REQUIRED_RULE)).toBeInTheDocument();
     expect(screen.getByText('Row 2')).toBeInTheDocument();
@@ -144,12 +123,12 @@ describe('Corporate Name', () => {
   });
 
   it("does not need a Corporate Name on a Corporate Client's Companions", async () => {
-    await uploadAndCheck([corporate(1, 'Jane', 'jane@example.com'), companion(1, 'John', 'john@example.com', 'C')]);
-    expectPassed();
+    await uploadRows([corporate(1, 'Jane', 'jane@example.com'), companion(1, 'John', 'john@example.com', 'C')]);
+    expectReachedReview();
   });
 
   it('reports a Companion row with a Corporate Name', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       corporate(1, 'Jane', 'jane@example.com'),
       client(1, 'John', 'Doe', 'john@example.com', {
         'Relationship to Client': 'Spouse',
@@ -162,22 +141,20 @@ describe('Corporate Name', () => {
   });
 
   it('reports a Leisure Client row with a Corporate Name', async () => {
-    await uploadAndCheck([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Corporate Name': 'Acme' })]);
+    await uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Corporate Name': 'Acme' })]);
     expect(screen.getByText(LEISURE_CORPORATE_RULE)).toBeInTheDocument();
     expect(screen.getByText('Row 2: “Acme”')).toBeInTheDocument();
   });
 
   it('accepts a Corporate Name of 20 characters and reports one of 21', async () => {
-    await uploadAndCheck([
+    await uploadRows([
       client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'C', 'Corporate Name': 'A'.repeat(20) }),
     ]);
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each(['A'.repeat(21), 'Acme 2000', 'Acme & Sons'])('reports a Corporate Name of %s', async (name) => {
-    await uploadAndCheck([
-      client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'C', 'Corporate Name': name }),
-    ]);
+    await uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'C', 'Corporate Name': name })]);
     expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
     expect(screen.getByText(CORPORATE_NAME_RULE)).toBeInTheDocument();
     expect(screen.getByText(`Row 2: “${name}”`)).toBeInTheDocument();

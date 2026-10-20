@@ -45,14 +45,14 @@ export function ReviewScreen({
               </tr>
             </thead>
             <tbody>
-              {rows.map((c, i) => (
+              {rows.map((r, i) => (
                 <tr key={i}>
                   <td>{i + 1}</td>
-                  <td>{c.group}</td>
-                  <td>{c.relationship}</td>
-                  <td>{c.firstName}</td>
-                  <td>{c.lastName}</td>
-                  <td>{c.email}</td>
+                  <td>{r.group}</td>
+                  <td>{r.relationship}</td>
+                  <td>{r.firstName}</td>
+                  <td>{r.lastName}</td>
+                  <td>{r.email}</td>
                 </tr>
               ))}
             </tbody>

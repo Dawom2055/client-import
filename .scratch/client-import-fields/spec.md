@@ -180,6 +180,9 @@ The File check now also rejects a Group with no Client or more than one Client, 
 ## Further Notes
 
 - The source for the fields, rules and messages is the "Client Import Fields MVP" document. Decisions made beyond it (Relationship to Client, Group rules, date format, phone maximum, header and pick-list matching, reference lists) came from a design session with the product owner.
-- Rejecting a Corporate Name on a Leisure Client row followed that session's recommendation; it was not separately confirmed. Revisit if Leisure Clients need a company recorded.
+- Rejecting a Corporate Name on a Leisure Client row was confirmed by the product owner.
+- Dates accept a single-digit month or day (1/5/1990) as well as MM/DD/YYYY, because spreadsheets often save dates that way; confirmed by the product owner.
+- Country fields also accept each country's official ISO short name and common alternatives (such as Burma, Ivory Coast, Turkey), and ignore accents and apostrophe style.
+- A row with a bad Group # or a bad or missing Profile Type is reported for that alone: its Group's rules and its Corporate Name are checked after it is fixed, so the admin sees one clear message.
 - ADR 0001 (reject the whole file on any Validation Failure) still holds and matters more now: skipping a bad Client row would orphan its Companions.
 - The Figma frames show the three-column Review table; `docs/design.md` and the frames need updating to the new columns.

@@ -1,8 +1,6 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFakeService } from '../test/fakes';
-import { addFile, advance, client, csvFile, HEADER, openAsSarah } from '../test/flows';
-import { renderClientsPage } from '../test/render';
+import { client, csvFile, expectReachedReview, HEADER, uploadAndCheck } from '../test/flows';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -12,23 +10,6 @@ const NAME_RULE = (field: string, max: number) =>
   `${field} must be ${max} characters or fewer and can only contain letters, spaces, and - ' . , characters.`;
 const EMAIL_RULE = "Email Address must contain an '@' symbol, and any '.' must be followed by additional characters.";
 const JANE = client(1, 'Jane', 'Doe', 'jane@example.com');
-
-/** Uploads `file` for Sarah Brown and lets both checks finish. */
-async function uploadAndCheck(file: File) {
-  const create = vi.fn(async () => ({ created: 0, failed: [] }));
-  const view = renderClientsPage({ service: createFakeService({ create }) });
-  await openAsSarah(view.user);
-  await addFile(view.user, file);
-  await view.user.click(screen.getByRole('button', { name: 'Continue' }));
-  await advance(1700); // File check
-  await advance(2800); // Format check
-  return { ...view, create };
-}
-
-const expectPassed = () => {
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  expect(screen.getByText(/Step 4 of 5/)).toBeInTheDocument();
-};
 
 describe('Format check: names', () => {
   it("reports a name with a character other than letters, spaces and - ' . ,", async () => {
@@ -54,7 +35,7 @@ describe('Format check: names', () => {
         client(2, 'Zoe', 'Smith, III', 'zoe@example.com'),
       ]),
     );
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each(['José', 'Zoë', 'Jose\u0301'])('reports the accented name %s', async (name) => {
@@ -70,7 +51,7 @@ describe('Format check: names', () => {
     await uploadAndCheck(
       csvFile([HEADER, client(1, 'Jane', 'Doe', 'jane@example.com', { [column]: 'a'.repeat(max) })]),
     );
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each([
@@ -108,7 +89,7 @@ describe('Format check: Email Address', () => {
 
   it('accepts letters, digits and . _ % + - before the @ and . - in the domain', async () => {
     await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', 'j.a_n%e+1-x@mail-box.example.co.uk')]));
-    expectPassed();
+    expectReachedReview();
   });
 
   it('accepts an email address of exactly 254 characters', async () => {
@@ -116,7 +97,7 @@ describe('Format check: Email Address', () => {
     const email = `${local}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(57)}.com`;
     expect(email).toHaveLength(254);
     await uploadAndCheck(csvFile([HEADER, client(1, 'Jane', 'Doe', email)]));
-    expectPassed();
+    expectReachedReview();
   });
 
   it('reports an email address over 254 characters', async () => {

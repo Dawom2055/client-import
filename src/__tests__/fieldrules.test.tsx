@@ -1,8 +1,6 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createFakeService } from '../test/fakes';
-import { addFile, advance, client, type Column, csvFile, HEADER, openAsSarah } from '../test/flows';
-import { renderClientsPage } from '../test/render';
+import { client, type Column, expectReachedReview, uploadRows } from '../test/flows';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -12,21 +10,8 @@ afterEach(() => {
 const TODAY = new Date(2026, 9, 20, 9, 30);
 
 /** Uploads one Client row with `cells` filled in for Sarah Brown, and lets both checks finish. */
-async function checkRow(cells: Partial<Record<Column, string>>) {
-  const view = renderClientsPage({ service: createFakeService() });
-  vi.setSystemTime(TODAY);
-  await openAsSarah(view.user);
-  await addFile(view.user, csvFile([HEADER, client(1, 'Jane', 'Doe', 'jane@example.com', cells)]));
-  await view.user.click(screen.getByRole('button', { name: 'Continue' }));
-  await advance(1700); // File check
-  await advance(2800); // Format check
-  return view;
-}
-
-const expectPassed = () => {
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  expect(screen.getByText(/Step 4 of 5/)).toBeInTheDocument();
-};
+const checkRow = (cells: Partial<Record<Column, string>>) =>
+  uploadRows([client(1, 'Jane', 'Doe', 'jane@example.com', cells)], { today: TODAY });
 
 const expectReported = (rule: string, value: string) => {
   expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
@@ -50,7 +35,7 @@ describe('pick lists', () => {
   it.each(cases)('accepts every %s option in any letter case', async (column, good) => {
     for (const value of good) {
       const { unmount } = await checkRow({ [column]: value });
-      expectPassed();
+      expectReachedReview();
       unmount();
     }
   });
@@ -62,7 +47,7 @@ describe('pick lists', () => {
 
   it('accepts a Phone Description with no Primary Phone Number', async () => {
     await checkRow({ 'Phone Description': 'Cell' });
-    expectPassed();
+    expectReachedReview();
   });
 });
 
@@ -71,7 +56,7 @@ describe('Primary Phone Number', () => {
 
   it.each(['5551234567', '123456789012345'])('accepts %s', async (phone) => {
     await checkRow({ 'Primary Phone Number': phone });
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each(['555123456', '1234567890123456', '555-123-4567', '(555) 1234567', '+15551234567'])(
@@ -89,7 +74,7 @@ describe('dates', () => {
 
   it.each(['10/20/2026', '02/29/2024', '1/5/1990', '12/31/1950'])('accepts a Date of Birth of %s', async (date) => {
     await checkRow({ 'Date of Birth': date });
-    expectPassed();
+    expectReachedReview();
   });
 
   it('reports a Date of Birth after today', async () => {
@@ -107,7 +92,7 @@ describe('dates', () => {
 
   it.each(['10/20/2026', '01/01/2035'])('accepts a Passport Expiry Date of %s', async (date) => {
     await checkRow({ 'Passport Expiry Date': date });
-    expectPassed();
+    expectReachedReview();
   });
 
   it('reports a Passport Expiry Date before today', async () => {
@@ -131,7 +116,7 @@ describe('countries', () => {
   it.each(countryFields)('accepts a %s by name or two-letter code, in any letter case', async (column) => {
     for (const value of ['Canada', 'united states', 'US', 'gb', 'Côte d’Ivoire', "Cote d'Ivoire"]) {
       const { unmount } = await checkRow({ [column]: value });
-      expectPassed();
+      expectReachedReview();
       unmount();
     }
   });
@@ -149,7 +134,7 @@ describe('countries', () => {
     'Turkey',
   ])('accepts the official or common country name %s', async (value) => {
     await checkRow({ Country: value });
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each(countryFields)('reports a %s that is not a country', async (column, rule) => {
@@ -169,7 +154,7 @@ describe('State/Province', () => {
     ['Canada', 'Quebec'],
   ])('accepts a %s state or province of %s', async (country, state) => {
     await checkRow({ Country: country, 'State/Province': state });
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each([
@@ -183,11 +168,11 @@ describe('State/Province', () => {
 
   it('does not check the State/Province of another country, or of a row with no Country', async () => {
     const other = await checkRow({ Country: 'France', 'State/Province': 'Île-de-France' });
-    expectPassed();
+    expectReachedReview();
     other.unmount();
 
     await checkRow({ 'State/Province': 'Anywhere' });
-    expectPassed();
+    expectReachedReview();
   });
 });
 
@@ -204,7 +189,7 @@ describe('Zip/Postal Code', () => {
     ['', 'anything'],
   ])('accepts a %s code of %s', async (country, zip) => {
     await checkRow({ Country: country, 'Zip/Postal Code': zip });
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each([
@@ -229,7 +214,7 @@ describe('address and passport lengths', () => {
 
   it.each(cases)('accepts a %s of exactly %i characters of any kind', async (column, max) => {
     await checkRow({ [column]: '#@/'.padEnd(max, 'x') });
-    expectPassed();
+    expectReachedReview();
   });
 
   it.each(cases)('reports a %s over %i characters', async (column, max, rule) => {

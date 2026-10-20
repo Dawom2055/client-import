@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
-import { vi } from 'vitest';
-import type { renderClientsPage } from './render';
+import { expect, vi } from 'vitest';
+import { createFakeService } from './fakes';
+import { renderClientsPage } from './render';
 
 type User = ReturnType<typeof renderClientsPage>['user'];
 
@@ -102,3 +103,33 @@ export const dropFile = (file: File) =>
 
 /** Lets timers and pending promises run, wrapped in act. */
 export const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+
+interface CheckOptions {
+  /** Stop once the File check (Step 2) has finished, without waiting for the Format check. */
+  fileCheckOnly?: boolean;
+  /** The admin's date while the checks run, for rules that compare with today. */
+  today?: Date;
+}
+
+/** Uploads `file` for Sarah Brown and lets the checks finish. Nothing is created unless a test finalises. */
+export async function uploadAndCheck(file: File, { fileCheckOnly = false, today }: CheckOptions = {}) {
+  const create = vi.fn(async () => ({ created: 0, failed: [] }));
+  const view = renderClientsPage({ service: createFakeService({ create }) });
+  if (today) vi.setSystemTime(today);
+  await openAsSarah(view.user);
+  await addFile(view.user, file);
+  await view.user.click(screen.getByRole('button', { name: 'Continue' }));
+  await advance(1700); // File check
+  if (!fileCheckOnly) await advance(2800); // Format check
+  return { ...view, create };
+}
+
+/** Uploads an Import File of the template header and `lines`, and lets both checks finish. */
+export const uploadRows = (lines: string[], options?: CheckOptions) =>
+  uploadAndCheck(csvFile([HEADER, ...lines]), options);
+
+/** Both checks passed and the Review is showing. */
+export function expectReachedReview() {
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByText(/Step 4 of 5/)).toBeInTheDocument();
+}

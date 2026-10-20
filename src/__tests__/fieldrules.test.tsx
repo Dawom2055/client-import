@@ -136,6 +136,22 @@ describe('countries', () => {
     }
   });
 
+  it.each([
+    'Trinidad and Tobago',
+    'Bosnia and Herzegovina',
+    'United States of America',
+    'Hong Kong',
+    'Myanmar',
+    'Democratic Republic of the Congo',
+    'Korea (the Republic of)',
+    'Viet Nam',
+    'Saint Kitts and Nevis',
+    'Turkey',
+  ])('accepts the official or common country name %s', async (value) => {
+    await checkRow({ Country: value });
+    expectPassed();
+  });
+
   it.each(countryFields)('reports a %s that is not a country', async (column, rule) => {
     await checkRow({ [column]: 'Narnia' });
     expectReported(rule, 'Narnia');

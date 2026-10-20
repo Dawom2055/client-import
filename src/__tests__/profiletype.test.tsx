@@ -81,6 +81,59 @@ describe('Profile Type', () => {
   });
 });
 
+describe('one clear message for a bad Profile Type or Group #', () => {
+  it('reports only the Profile Type when a bad one makes a Group look like it has two Clients', async () => {
+    await uploadAndCheck([
+      client(1, 'Jane', 'Doe', 'jane@example.com'),
+      client(1, 'Ann', 'Lee', 'ann@example.com', { 'Profile Type': 'X' }),
+    ]);
+    expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
+    expect(screen.getByText(PROFILE_TYPE_RULE)).toBeInTheDocument();
+    expect(screen.getByText('Total errors: 1')).toBeInTheDocument();
+  });
+
+  it("reports only the Profile Type when the Group's only Client has a bad one", async () => {
+    await uploadAndCheck([
+      client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'X' }),
+      companion(1, 'John', 'john@example.com', 'L'),
+    ]);
+    expect(screen.getByText(/Step 3 of 5: Format check/)).toBeInTheDocument();
+    expect(screen.getByText(PROFILE_TYPE_RULE)).toBeInTheDocument();
+    expect(screen.getByText('Total errors: 1')).toBeInTheDocument();
+  });
+
+  it('reports only the missing Profile Type, not the Group, when it is blank', async () => {
+    await uploadAndCheck([
+      client(1, 'Jane', 'Doe', 'jane@example.com'),
+      client(1, 'Ann', 'Lee', 'ann@example.com', { 'Profile Type': '' }),
+    ]);
+    expect(screen.getByText('Required fields missing')).toBeInTheDocument();
+    expect(screen.getByText('Total errors: 1')).toBeInTheDocument();
+  });
+
+  it('does not check the Corporate Name of a row whose Group # is not valid', async () => {
+    await uploadAndCheck([
+      client(1, 'Jane', 'Doe', 'jane@example.com', { 'Group #': 'abc', 'Corporate Name': 'Acme' }),
+    ]);
+    expect(screen.getByText('Group # must be a whole number of 1 or more.')).toBeInTheDocument();
+    expect(screen.queryByText(LEISURE_CORPORATE_RULE)).not.toBeInTheDocument();
+    expect(screen.getByText('Total errors: 1')).toBeInTheDocument();
+  });
+
+  it('does not check the Corporate Name of a row whose Profile Type is not valid', async () => {
+    await uploadAndCheck([
+      client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'X', 'Corporate Name': 'Acme' }),
+      client(1, 'John', 'Doe', 'john@example.com', {
+        'Relationship to Client': 'Spouse',
+        'Profile Type': 'X',
+        'Corporate Name': 'Acme',
+      }),
+    ]);
+    expect(screen.queryByText(COMPANION_CORPORATE_RULE)).not.toBeInTheDocument();
+    expect(screen.queryByText(LEISURE_CORPORATE_RULE)).not.toBeInTheDocument();
+  });
+});
+
 describe('Corporate Name', () => {
   it('reports a Corporate Client row with no Corporate Name', async () => {
     const { create } = await uploadAndCheck([client(1, 'Jane', 'Doe', 'jane@example.com', { 'Profile Type': 'C' })]);

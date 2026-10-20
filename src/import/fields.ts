@@ -96,13 +96,14 @@ const maxLength = <K extends string>(key: K, header: string, max: number, messag
 /** Compares names ignoring letter case, accents and the style of apostrophe, so "Cote d'Ivoire" matches "Côte d’Ivoire". */
 const fold = (v: string) => v.normalize('NFD').replace(/\p{M}/gu, '').replace(/[‘’]/g, "'").toLowerCase();
 
-const matches = (v: string, entry: { code: string; name: string }) =>
-  fold(v) === fold(entry.code) || fold(v) === fold(entry.name);
+/** Whether `v` is this entry's code, name, or one of its other accepted names (such as the official ISO name). */
+const matches = (v: string, entry: { code: string; name: string; aliases?: string[] }) =>
+  [entry.code, entry.name, ...(entry.aliases ?? [])].some((n) => fold(n) === fold(v));
 
 /** The two-letter code of the country written as `v`, by name or code; null when it is not a country. */
 const countryCode = (v: string) => countries.find((c) => matches(v, c))?.code ?? null;
 
-/** A country field: an ISO country, by its English name or two-letter code. */
+/** A country field: an ISO country, by its English name, official ISO name or two-letter code. */
 const countryField = <K extends string>(key: K, header: string) =>
   ({
     key,

@@ -89,36 +89,42 @@ const isGroupNumber = (v: string) => /^[0-9]+$/.test(v) && Number(v) >= 1;
 const profileType = (r: Row) => r.record.profileType.toUpperCase();
 const hasProfileType = (r: Row) => profileType(r) === 'L' || profileType(r) === 'C';
 
+/** Adds `item` to the list kept under `key`. */
+function append<K, V>(map: Map<K, V[]>, key: K, item: V) {
+  map.set(key, [...(map.get(key) ?? []), item]);
+}
+
 /**
  * The File check's rules across rows: every Group has exactly one Client row, a Companion shares its Client's
  * Profile Type, and only a Corporate Client row carries a Corporate Name. Every row of a failing Group is reported.
+ *
+ * A row with a bad Group # or Profile Type is reported for that alone: its Group, and its Corporate Name, are
+ * checked once it is fixed. One clear message is easier to act on than several that share a cause.
  */
 function crossRowCheck(rows: Row[]): RuleError[] {
   const groups = new Map<number, Row[]>();
-  for (const r of rows) {
-    if (!isGroupNumber(r.record.group)) continue;
-    const n = Number(r.record.group);
-    groups.set(n, [...(groups.get(n) ?? []), r]);
-  }
+  for (const r of rows) if (isGroupNumber(r.record.group)) append(groups, Number(r.record.group), r);
+  const checkedGroups = [...groups].filter(([, members]) => members.every(hasProfileType));
+
   const offenders = (fails: (members: Row[]) => boolean) =>
-    [...groups.entries()]
+    checkedGroups
       .filter(([, members]) => fails(members))
       .flatMap(([n, members]) => members.map(({ row }) => ({ row, detail: `Group ${n}` })))
       .sort((a, b) => a.row - b.row);
-  const clientCount = (members: Row[]) => members.filter((m) => m.record.kind === 'client').length;
+  const clientRowsOf = (members: Row[]) => members.filter((m) => m.record.kind === 'client');
 
   // Profile Types are compared only within a Group whose single Client row is known.
-  const mismatched = [...groups.values()]
-    .filter((members) => clientCount(members) === 1)
-    .flatMap((members) => {
-      const owner = members.find((m) => m.record.kind === 'client')!;
-      if (!hasProfileType(owner)) return [];
-      return members.filter((m) => m !== owner && hasProfileType(m) && profileType(m) !== profileType(owner));
+  const mismatched = checkedGroups
+    .filter(([, members]) => clientRowsOf(members).length === 1)
+    .flatMap(([, members]) => {
+      const [groupClient] = clientRowsOf(members);
+      return members.filter((m) => profileType(m) !== profileType(groupClient));
     })
     .sort((a, b) => a.row - b.row)
     .map(({ row, record }) => ({ row, value: record.profileType }));
 
-  const clientRows = rows.filter((r) => r.record.kind === 'client');
+  const checkable = rows.filter((r) => isGroupNumber(r.record.group) && hasProfileType(r));
+  const checkableClients = checkable.filter((r) => r.record.kind === 'client');
   const withCorporateName = (r: Row) => r.record.corporateName !== '';
   const corporateNameOf = ({ row, record }: Row) => ({ row, value: record.corporateName });
 
@@ -129,36 +135,36 @@ function crossRowCheck(rows: Row[]): RuleError[] {
         .filter(({ record }) => record.group !== '' && !isGroupNumber(record.group))
         .map(({ row, record }) => ({ row, value: record.group })),
     },
-    { rule: ONE_CLIENT_RULE, rows: offenders((m) => clientCount(m) > 1) },
-    { rule: NO_CLIENT_RULE, rows: offenders((m) => clientCount(m) === 0) },
+    { rule: ONE_CLIENT_RULE, rows: offenders((m) => clientRowsOf(m).length > 1) },
+    { rule: NO_CLIENT_RULE, rows: offenders((m) => clientRowsOf(m).length === 0) },
     { rule: PROFILE_MATCH_RULE, rows: mismatched },
     {
       rule: CORPORATE_REQUIRED_RULE,
-      rows: clientRows.filter((r) => profileType(r) === 'C' && !withCorporateName(r)).map(({ row }) => ({ row })),
+      rows: checkableClients.filter((r) => profileType(r) === 'C' && !withCorporateName(r)).map(({ row }) => ({ row })),
     },
     {
       rule: COMPANION_CORPORATE_RULE,
-      rows: rows.filter((r) => r.record.kind === 'companion' && withCorporateName(r)).map(corporateNameOf),
+      rows: checkable.filter((r) => r.record.kind === 'companion' && withCorporateName(r)).map(corporateNameOf),
     },
     {
       rule: LEISURE_CORPORATE_RULE,
-      rows: clientRows.filter((r) => profileType(r) === 'L' && withCorporateName(r)).map(corporateNameOf),
+      rows: checkableClients.filter((r) => profileType(r) === 'L' && withCorporateName(r)).map(corporateNameOf),
     },
   ].filter((e) => e.rows.length > 0);
 }
 
 /** The Format check: the content of each filled-in cell, run only once the File check has passed. */
 function formatCheck(rows: Row[]): RuleError[] {
-  // One group per message, in column order; a field with two messages (such as a date) can give two groups.
-  const groups = new Map<string, RuleError['rows']>();
+  // One error per message, in column order; a field with two messages (such as a date) can give two errors.
+  const byMessage = new Map<string, RuleError['rows']>();
   FIELDS.forEach((field, c) => {
     for (const { row, cells, record } of rows) {
       if (cells[c] === '') continue;
       const message = field.problem(cells[c], record);
-      if (message) groups.set(message, [...(groups.get(message) ?? []), { row, value: cells[c] }]);
+      if (message) append(byMessage, message, { row, value: cells[c] });
     }
   });
-  return [...groups].map(([rule, offenders]) => ({ rule, rows: offenders }));
+  return [...byMessage].map(([rule, offenders]) => ({ rule, rows: offenders }));
 }
 
 function toRecord(cells: string[]): ImportRow {

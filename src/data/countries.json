@@ -13,7 +13,8 @@
   },
   {
     "code": "AG",
-    "name": "Antigua & Barbuda"
+    "name": "Antigua & Barbuda",
+    "aliases": ["Antigua and Barbuda"]
   },
   {
     "code": "AI",
@@ -65,7 +66,8 @@
   },
   {
     "code": "BA",
-    "name": "Bosnia & Herzegovina"
+    "name": "Bosnia & Herzegovina",
+    "aliases": ["Bosnia and Herzegovina"]
   },
   {
     "code": "BB",
@@ -101,7 +103,8 @@
   },
   {
     "code": "BL",
-    "name": "St. Barthélemy"
+    "name": "St. Barthélemy",
+    "aliases": ["Saint Barthelemy"]
   },
   {
     "code": "BM",
@@ -109,15 +112,18 @@
   },
   {
     "code": "BN",
-    "name": "Brunei"
+    "name": "Brunei",
+    "aliases": ["Brunei Darussalam"]
   },
   {
     "code": "BO",
-    "name": "Bolivia"
+    "name": "Bolivia",
+    "aliases": ["Bolivia (Plurinational State of)"]
   },
   {
     "code": "BQ",
-    "name": "Caribbean Netherlands"
+    "name": "Caribbean Netherlands",
+    "aliases": ["Bonaire, Sint Eustatius and Saba"]
   },
   {
     "code": "BR",
@@ -157,7 +163,8 @@
   },
   {
     "code": "CD",
-    "name": "Congo - Kinshasa"
+    "name": "Congo - Kinshasa",
+    "aliases": ["Congo (the Democratic Republic of the)", "Democratic Republic of the Congo", "DR Congo"]
   },
   {
     "code": "CF",
@@ -165,7 +172,8 @@
   },
   {
     "code": "CG",
-    "name": "Congo - Brazzaville"
+    "name": "Congo - Brazzaville",
+    "aliases": ["Congo", "Republic of the Congo"]
   },
   {
     "code": "CH",
@@ -173,7 +181,8 @@
   },
   {
     "code": "CI",
-    "name": "Côte d’Ivoire"
+    "name": "Côte d’Ivoire",
+    "aliases": ["Ivory Coast"]
   },
   {
     "code": "CK",
@@ -205,7 +214,8 @@
   },
   {
     "code": "CV",
-    "name": "Cape Verde"
+    "name": "Cape Verde",
+    "aliases": ["Cabo Verde"]
   },
   {
     "code": "CW",
@@ -221,7 +231,8 @@
   },
   {
     "code": "CZ",
-    "name": "Czechia"
+    "name": "Czechia",
+    "aliases": ["Czech Republic"]
   },
   {
     "code": "DE",
@@ -285,11 +296,13 @@
   },
   {
     "code": "FK",
-    "name": "Falkland Islands"
+    "name": "Falkland Islands",
+    "aliases": ["Falkland Islands (Malvinas)"]
   },
   {
     "code": "FM",
-    "name": "Micronesia"
+    "name": "Micronesia",
+    "aliases": ["Micronesia (Federated States of)"]
   },
   {
     "code": "FO",
@@ -305,7 +318,8 @@
   },
   {
     "code": "GB",
-    "name": "United Kingdom"
+    "name": "United Kingdom",
+    "aliases": ["United Kingdom of Great Britain and Northern Ireland", "Great Britain", "UK"]
   },
   {
     "code": "GD",
@@ -357,7 +371,8 @@
   },
   {
     "code": "GS",
-    "name": "South Georgia & South Sandwich Islands"
+    "name": "South Georgia & South Sandwich Islands",
+    "aliases": ["South Georgia and the South Sandwich Islands"]
   },
   {
     "code": "GT",
@@ -377,11 +392,13 @@
   },
   {
     "code": "HK",
-    "name": "Hong Kong SAR China"
+    "name": "Hong Kong SAR China",
+    "aliases": ["Hong Kong"]
   },
   {
     "code": "HM",
-    "name": "Heard & McDonald Islands"
+    "name": "Heard & McDonald Islands",
+    "aliases": ["Heard Island and McDonald Islands"]
   },
   {
     "code": "HN",
@@ -429,7 +446,8 @@
   },
   {
     "code": "IR",
-    "name": "Iran"
+    "name": "Iran",
+    "aliases": ["Iran (Islamic Republic of)"]
   },
   {
     "code": "IS",
@@ -477,15 +495,18 @@
   },
   {
     "code": "KN",
-    "name": "St. Kitts & Nevis"
+    "name": "St. Kitts & Nevis",
+    "aliases": ["Saint Kitts and Nevis"]
   },
   {
     "code": "KP",
-    "name": "North Korea"
+    "name": "North Korea",
+    "aliases": ["Korea (the Democratic People's Republic of)", "Democratic People's Republic of Korea"]
   },
   {
     "code": "KR",
-    "name": "South Korea"
+    "name": "South Korea",
+    "aliases": ["Korea (the Republic of)", "Republic of Korea", "Korea"]
   },
   {
     "code": "KW",
@@ -501,7 +522,8 @@
   },
   {
     "code": "LA",
-    "name": "Laos"
+    "name": "Laos",
+    "aliases": ["Lao People's Democratic Republic"]
   },
   {
     "code": "LB",
@@ -509,7 +531,8 @@
   },
   {
     "code": "LC",
-    "name": "St. Lucia"
+    "name": "St. Lucia",
+    "aliases": ["Saint Lucia"]
   },
   {
     "code": "LI",
@@ -553,7 +576,8 @@
   },
   {
     "code": "MD",
-    "name": "Moldova"
+    "name": "Moldova",
+    "aliases": ["Moldova (the Republic of)", "Republic of Moldova"]
   },
   {
     "code": "ME",
@@ -561,7 +585,8 @@
   },
   {
     "code": "MF",
-    "name": "St. Martin"
+    "name": "St. Martin",
+    "aliases": ["Saint Martin (French part)", "Saint Martin"]
   },
   {
     "code": "MG",
@@ -581,7 +606,8 @@
   },
   {
     "code": "MM",
-    "name": "Myanmar (Burma)"
+    "name": "Myanmar (Burma)",
+    "aliases": ["Myanmar", "Burma"]
   },
   {
     "code": "MN",
@@ -589,7 +615,8 @@
   },
   {
     "code": "MO",
-    "name": "Macao SAR China"
+    "name": "Macao SAR China",
+    "aliases": ["Macao", "Macau"]
   },
   {
     "code": "MP",
@@ -661,7 +688,8 @@
   },
   {
     "code": "NL",
-    "name": "Netherlands"
+    "name": "Netherlands",
+    "aliases": ["Netherlands (Kingdom of the)"]
   },
   {
     "code": "NO",
@@ -717,11 +745,13 @@
   },
   {
     "code": "PM",
-    "name": "St. Pierre & Miquelon"
+    "name": "St. Pierre & Miquelon",
+    "aliases": ["Saint Pierre and Miquelon"]
   },
   {
     "code": "PN",
-    "name": "Pitcairn Islands"
+    "name": "Pitcairn Islands",
+    "aliases": ["Pitcairn"]
   },
   {
     "code": "PR",
@@ -729,7 +759,8 @@
   },
   {
     "code": "PS",
-    "name": "Palestinian Territories"
+    "name": "Palestinian Territories",
+    "aliases": ["Palestine, State of", "State of Palestine", "Palestine"]
   },
   {
     "code": "PT",
@@ -761,7 +792,8 @@
   },
   {
     "code": "RU",
-    "name": "Russia"
+    "name": "Russia",
+    "aliases": ["Russian Federation"]
   },
   {
     "code": "RW",
@@ -793,7 +825,8 @@
   },
   {
     "code": "SH",
-    "name": "St. Helena"
+    "name": "St. Helena",
+    "aliases": ["Saint Helena, Ascension and Tristan da Cunha", "Saint Helena"]
   },
   {
     "code": "SI",
@@ -801,7 +834,8 @@
   },
   {
     "code": "SJ",
-    "name": "Svalbard & Jan Mayen"
+    "name": "Svalbard & Jan Mayen",
+    "aliases": ["Svalbard and Jan Mayen"]
   },
   {
     "code": "SK",
@@ -833,7 +867,8 @@
   },
   {
     "code": "ST",
-    "name": "São Tomé & Príncipe"
+    "name": "São Tomé & Príncipe",
+    "aliases": ["Sao Tome and Principe"]
   },
   {
     "code": "SV",
@@ -841,19 +876,23 @@
   },
   {
     "code": "SX",
-    "name": "Sint Maarten"
+    "name": "Sint Maarten",
+    "aliases": ["Sint Maarten (Dutch part)"]
   },
   {
     "code": "SY",
-    "name": "Syria"
+    "name": "Syria",
+    "aliases": ["Syrian Arab Republic"]
   },
   {
     "code": "SZ",
-    "name": "Eswatini"
+    "name": "Eswatini",
+    "aliases": ["Swaziland"]
   },
   {
     "code": "TC",
-    "name": "Turks & Caicos Islands"
+    "name": "Turks & Caicos Islands",
+    "aliases": ["Turks and Caicos Islands"]
   },
   {
     "code": "TD",
@@ -881,7 +920,8 @@
   },
   {
     "code": "TL",
-    "name": "Timor-Leste"
+    "name": "Timor-Leste",
+    "aliases": ["East Timor"]
   },
   {
     "code": "TM",
@@ -897,11 +937,13 @@
   },
   {
     "code": "TR",
-    "name": "Türkiye"
+    "name": "Türkiye",
+    "aliases": ["Turkey"]
   },
   {
     "code": "TT",
-    "name": "Trinidad & Tobago"
+    "name": "Trinidad & Tobago",
+    "aliases": ["Trinidad and Tobago"]
   },
   {
     "code": "TV",
@@ -909,11 +951,13 @@
   },
   {
     "code": "TW",
-    "name": "Taiwan"
+    "name": "Taiwan",
+    "aliases": ["Taiwan (Province of China)", "Taiwan, Province of China"]
   },
   {
     "code": "TZ",
-    "name": "Tanzania"
+    "name": "Tanzania",
+    "aliases": ["Tanzania, United Republic of", "United Republic of Tanzania"]
   },
   {
     "code": "UA",
@@ -925,11 +969,13 @@
   },
   {
     "code": "UM",
-    "name": "U.S. Outlying Islands"
+    "name": "U.S. Outlying Islands",
+    "aliases": ["United States Minor Outlying Islands"]
   },
   {
     "code": "US",
-    "name": "United States"
+    "name": "United States",
+    "aliases": ["United States of America", "USA"]
   },
   {
     "code": "UY",
@@ -941,27 +987,33 @@
   },
   {
     "code": "VA",
-    "name": "Vatican City"
+    "name": "Vatican City",
+    "aliases": ["Holy See", "Vatican"]
   },
   {
     "code": "VC",
-    "name": "St. Vincent & Grenadines"
+    "name": "St. Vincent & Grenadines",
+    "aliases": ["Saint Vincent and the Grenadines"]
   },
   {
     "code": "VE",
-    "name": "Venezuela"
+    "name": "Venezuela",
+    "aliases": ["Venezuela (Bolivarian Republic of)"]
   },
   {
     "code": "VG",
-    "name": "British Virgin Islands"
+    "name": "British Virgin Islands",
+    "aliases": ["Virgin Islands (British)"]
   },
   {
     "code": "VI",
-    "name": "U.S. Virgin Islands"
+    "name": "U.S. Virgin Islands",
+    "aliases": ["Virgin Islands (U.S.)"]
   },
   {
     "code": "VN",
-    "name": "Vietnam"
+    "name": "Vietnam",
+    "aliases": ["Viet Nam"]
   },
   {
     "code": "VU",
@@ -969,7 +1021,8 @@
   },
   {
     "code": "WF",
-    "name": "Wallis & Futuna"
+    "name": "Wallis & Futuna",
+    "aliases": ["Wallis and Futuna"]
   },
   {
     "code": "WS",

@@ -200,7 +200,8 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
               <span className="field-label">Clients</span>
               <p className="hint">
                 Use the template to list one Client or Companion per row. Rows with the same Group # travel together:
-                one Client row, with Relationship to Client left blank, and any Companion rows.
+                one Client row, with Relationship to Client left blank, and any Companion rows. A Corporate Client row
+                needs only a Corporate Name; its Companions still need a First and Last Name.
               </p>
               <button type="button" className="link-btn with-icon" onClick={downloadTemplate}>
                 <span aria-hidden>⤓</span> Download Import Template

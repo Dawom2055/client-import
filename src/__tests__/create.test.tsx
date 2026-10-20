@@ -42,7 +42,7 @@ describe('confirming and creating', () => {
       within(table)
         .getAllByRole('columnheader')
         .map((h) => h.textContent),
-    ).toEqual(['#', 'Group #', 'Relationship to Client', 'First Name', 'Last Name', 'Email Address']);
+    ).toEqual(['#', 'Group #', 'Relationship to Client', 'Corporate Name', 'First Name', 'Last Name', 'Email Address']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(
       rows.map((r) =>
@@ -51,9 +51,9 @@ describe('confirming and creating', () => {
           .map((c) => c.textContent),
       ),
     ).toEqual([
-      ['1', '1', '', 'Jane', 'Doe', 'jane@example.com'],
-      ['2', '2', '', 'Ann', 'Lee', 'ann@example.com'],
-      ['3', '3', '', 'Bob', 'Ray', 'bob@example.com'],
+      ['1', '1', '', '', 'Jane', 'Doe', 'jane@example.com'],
+      ['2', '2', '', '', 'Ann', 'Lee', 'ann@example.com'],
+      ['3', '3', '', '', 'Bob', 'Ray', 'bob@example.com'],
     ]);
   });
 

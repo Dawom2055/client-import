@@ -39,6 +39,7 @@ export function ReviewScreen({
                 <th scope="col">#</th>
                 <th scope="col">Group #</th>
                 <th scope="col">Relationship to Client</th>
+                <th scope="col">Corporate Name</th>
                 <th scope="col">First Name</th>
                 <th scope="col">Last Name</th>
                 <th scope="col">Email Address</th>
@@ -50,6 +51,7 @@ export function ReviewScreen({
                   <td>{i + 1}</td>
                   <td>{r.group}</td>
                   <td>{r.relationship}</td>
+                  <td>{r.corporateName}</td>
                   <td>{r.firstName}</td>
                   <td>{r.lastName}</td>
                   <td>{r.email}</td>

@@ -18,10 +18,17 @@ export interface Field {
   key: string;
   /** The column name in the Import Template, without the required marker. */
   header: string;
-  required: boolean;
+  /** Whether a blank cell fails the File check: always, never, or depending on the rest of the row. */
+  required: boolean | ((row: Cells) => boolean);
   /** Blank cells are never checked here; a blank required cell is reported by the File check. */
   problem: Problem;
 }
+
+/** A Corporate Client row names its company and may leave First Name and Last Name blank; its Companions may not. */
+const isCorporateClientRow = (row: Cells) => row.relationship === '' && row.profileType.toUpperCase() === 'C';
+
+/** Required on every row except a Corporate Client row. */
+const exceptCorporateClient = (row: Cells) => !isCorporateClientRow(row);
 
 const rule =
   (isValid: (value: string) => boolean, message: string): Problem =>
@@ -40,7 +47,13 @@ const oneOf =
 const NAME_CHARACTERS = /^[A-Za-z \-'.,]+$/;
 
 /** A name of at most `max` characters, with the error message written for `label`. */
-const nameField = <K extends string>(key: K, header: string, required: boolean, max: number, label = header) =>
+const nameField = <K extends string>(
+  key: K,
+  header: string,
+  required: Field['required'],
+  max: number,
+  label = header,
+) =>
   ({
     key,
     header,
@@ -145,9 +158,9 @@ export const FIELDS = [
     problem: rule((v) => TITLES(v.replace(/\.$/, '')), 'Title must be one of: Mr., Mrs., Ms., Dr., Mstr, or Miss'),
   },
   nameField('corporateName', 'Corporate Name', false, 20, 'Corporate name'),
-  nameField('firstName', 'First Name', true, 20),
+  nameField('firstName', 'First Name', exceptCorporateClient, 20),
   nameField('middleName', 'Middle Name', false, 30),
-  nameField('lastName', 'Last Name', true, 29),
+  nameField('lastName', 'Last Name', exceptCorporateClient, 29),
   pickList('gender', 'Gender', ['M', 'F'], "Gender must be either 'M' (Male) or 'F' (Female)."),
   dateField('dateOfBirth', 'Date of Birth', (date, now) => date <= now, 'Date of Birth cannot be a future date.'),
   countryField('nationality', 'Nationality'),
@@ -213,3 +226,10 @@ export const FIELDS = [
 ] as const satisfies readonly Field[];
 
 export type FieldKey = (typeof FIELDS)[number]['key'];
+
+/** Whether `field` must be filled in on this row. */
+export const isRequired = (field: Field, row: Cells) =>
+  typeof field.required === 'function' ? field.required(row) : field.required;
+
+/** Whether the Import Template marks `field` with `*`: required on at least some rows. */
+export const isMarkedRequired = (field: Field) => field.required !== false;

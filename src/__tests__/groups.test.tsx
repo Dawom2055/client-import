@@ -41,11 +41,11 @@ describe('Client rows and Companion rows', () => {
       within(screen.getByRole('table'))
         .getAllByRole('columnheader')
         .map((h) => h.textContent),
-    ).toEqual(['#', 'Group #', 'Relationship to Client', 'First Name', 'Last Name', 'Email Address']);
+    ).toEqual(['#', 'Group #', 'Relationship to Client', 'Corporate Name', 'First Name', 'Last Name', 'Email Address']);
     expect(reviewRows()).toEqual([
-      ['1', '1', '', 'Jane', 'Doe', 'jane@example.com'],
-      ['2', '1', 'Spouse', 'John', 'Doe', 'john@example.com'],
-      ['3', '1', 'Child', 'Amy', 'Doe', 'amy@example.com'],
+      ['1', '1', '', '', 'Jane', 'Doe', 'jane@example.com'],
+      ['2', '1', 'Spouse', '', 'John', 'Doe', 'john@example.com'],
+      ['3', '1', 'Child', '', 'Amy', 'Doe', 'amy@example.com'],
     ]);
 
     await user.click(screen.getByRole('button', { name: 'Finalize and Upload' }));

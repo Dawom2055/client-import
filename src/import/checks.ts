@@ -1,8 +1,8 @@
-import { FIELDS } from './fields';
+import { FIELDS, isMarkedRequired, isRequired } from './fields';
 import type { ImportRow, RuleError, ValidationResult } from './types';
 
 /** The Import Template's header row, with required columns marked `*`. */
-export const HEADERS = FIELDS.map((f) => (f.required ? `${f.header}*` : f.header));
+export const HEADERS = FIELDS.map((f) => (isMarkedRequired(f) ? `${f.header}*` : f.header));
 const EMAIL = FIELDS.findIndex((f) => f.key === 'email');
 
 export const COLUMNS_MESSAGE = `The file must have exactly these columns: ${HEADERS.join(', ')}.`;
@@ -194,8 +194,8 @@ export function checkImportFile(text: string): ValidationResult {
   });
   if (rows.length === 0) return fileFailure(EMPTY_MESSAGE);
 
-  const missing = rows.flatMap(({ row, cells }) =>
-    FIELDS.flatMap((field, c) => (field.required && cells[c] === '' ? [{ row, detail: field.header }] : [])),
+  const missing = rows.flatMap(({ row, cells, record }) =>
+    FIELDS.flatMap((field, c) => (cells[c] === '' && isRequired(field, record) ? [{ row, detail: field.header }] : [])),
   );
 
   // Emails match ignoring case and surrounding spaces; every row sharing one is reported.

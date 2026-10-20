@@ -23,7 +23,7 @@ _Avoid_: Traveller, dependant
 A set of rows in one Import File that share a Group number: exactly one Client row and any number of Companion rows. Each Companion row is linked to the Group's Client. A Client with no Companions is a Group of one.
 
 **Profile Type**:
-Whether a Client is Leisure (`L`) or Corporate (`C`). A Corporate Client row names its company in Corporate Name; Companion rows never carry a Corporate Name.
+Whether a Client is Leisure (`L`) or Corporate (`C`). A Corporate Client row names its company in Corporate Name and need not name a person; Companion rows never carry a Corporate Name and always name a person.
 
 **Client row**:
 A row in the Import File with no Relationship to Client. It creates a Client.

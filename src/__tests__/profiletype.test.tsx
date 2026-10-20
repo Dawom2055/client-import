@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { client, expectReachedReview, uploadRows } from '../test/flows';
 
@@ -120,6 +120,43 @@ describe('Corporate Name', () => {
     expect(screen.getByText(CORPORATE_REQUIRED_RULE)).toBeInTheDocument();
     expect(screen.getByText('Row 2')).toBeInTheDocument();
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it('accepts a Corporate Client row with only a Corporate Name, showing it in the Review', async () => {
+    await uploadRows([
+      client(1, '', '', 'acme@example.com', { 'Profile Type': 'C', 'Corporate Name': 'Acme' }),
+      companion(1, 'John', 'john@example.com', 'C'),
+    ]);
+    expectReachedReview();
+    const [first] = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+    expect(
+      within(first)
+        .getAllByRole('cell')
+        .map((c) => c.textContent),
+    ).toEqual(['1', '1', '', 'Acme', '', '', 'acme@example.com']);
+  });
+
+  it("still requires First Name and Last Name on a Corporate Client's Companions", async () => {
+    await uploadRows([
+      corporate(1, 'Jane', 'jane@example.com'),
+      client(1, '', '', 'john@example.com', { 'Relationship to Client': 'Spouse', 'Profile Type': 'C' }),
+    ]);
+    expect(screen.getByText('Required fields missing')).toBeInTheDocument();
+    expect(screen.getByText('Row 3: First Name')).toBeInTheDocument();
+    expect(screen.getByText('Row 3: Last Name')).toBeInTheDocument();
+  });
+
+  it('reports only the missing Corporate Name when a Corporate Client row has no names either', async () => {
+    await uploadRows([client(1, '', '', 'acme@example.com', { 'Profile Type': 'C' })]);
+    expect(screen.getByText(CORPORATE_REQUIRED_RULE)).toBeInTheDocument();
+    expect(screen.queryByText('Required fields missing')).not.toBeInTheDocument();
+    expect(screen.getByText('Total errors: 1')).toBeInTheDocument();
+  });
+
+  it('still requires First Name and Last Name on a Leisure Client row', async () => {
+    await uploadRows([client(1, '', '', 'jane@example.com')]);
+    expect(screen.getByText('Row 2: First Name')).toBeInTheDocument();
+    expect(screen.getByText('Row 2: Last Name')).toBeInTheDocument();
   });
 
   it("does not need a Corporate Name on a Corporate Client's Companions", async () => {

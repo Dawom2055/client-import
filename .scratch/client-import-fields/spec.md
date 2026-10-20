@@ -105,7 +105,7 @@ The File check now also rejects a Group with no Client or more than one Client, 
 - **Header matching.** A header cell matches when it equals the expected name after trimming, dropping a trailing `*` and lower-casing. The order is fixed. Anything else is the existing file-level columns failure, whose message lists the expected columns.
 - **Field definitions in one place.** Each column is described once: its header name, whether it is required, and its Format check rule and message. The template, header matching, required-field check and Format check are all driven from that list, so adding or changing a field is a single edit.
 - **Row type.** Relationship to Client blank → Client row; filled → Companion row. Nothing else decides the type.
-- **Required fields.** Group #, Profile Type, First Name, Last Name and Email Address on every row, reported under the existing "Required fields missing" rule naming the column. Corporate Name's conditional requirement is a separate rule (below), not part of this one.
+- **Required fields.** Group #, Profile Type and Email Address on every row; First Name and Last Name on every row except a Corporate Client row, which needs only its Corporate Name (its Companion rows still need both names). All five keep their `*` in the template. Missing fields are reported under the existing "Required fields missing" rule naming the column. Corporate Name's conditional requirement is a separate rule (below), not part of this one.
 - **File check (Step 2)** runs, in addition to its existing rules, these rules. Each is its own error group listing every affected row:
   - "Group # must be a whole number of 1 or more." (a filled Group # that is not a positive whole number)
   - "Each Group must have only one Client." (every row of a Group with two or more Client rows)
@@ -149,7 +149,7 @@ The File check now also rejects a Group with no Client or more than one Client, 
 - **Reference lists.** Country fields (Nationality, Country, Passport Issuing Country) accept an ISO 3166 English short country name or its two-letter code. State/Province accepts the US states (with DC) and Canadian provinces and territories by name or two-letter code. These lists live in the data folder next to the dummy Advisors, so the real ADX lists can replace them without touching the rules.
 - **"Today".** Date comparisons use the admin's local calendar date. An expiry date of today is valid. A date of birth of today is valid.
 - **Validation result shape.** A passing validation returns one parsed record per row, with every field plus its row type and Group #. Review and creation are built from these records, not by re-reading the file.
-- **Review screen.** The table columns become number, Group #, Relationship to Client, First Name, Last Name, Email Address. The total counts all rows. Other fields stay off the table.
+- **Review screen.** The table columns become number, Group #, Relationship to Client, Corporate Name, First Name, Last Name, Email Address. The total counts all rows. Other fields stay off the table.
 - **Import service boundary.** Unchanged: advisor search, whole-file validation and creation. Creation stays mocked; it receives the validated rows (Clients and Companions with their Groups) and can still simulate a Partial Success.
 - **Modal copy.** The upload step's hint changes from "list each Client's name and email address" to explain Client rows, Companion rows and Group #.
 

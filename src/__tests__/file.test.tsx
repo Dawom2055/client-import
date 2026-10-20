@@ -16,7 +16,8 @@ describe('adding a file', () => {
     expect(
       screen.getByText(
         'Use the template to list one Client or Companion per row. Rows with the same Group # travel together: ' +
-          'one Client row, with Relationship to Client left blank, and any Companion rows.',
+          'one Client row, with Relationship to Client left blank, and any Companion rows. ' +
+          'A Corporate Client row needs only a Corporate Name; its Companions still need a First and Last Name.',
       ),
     ).toBeInTheDocument();
   });

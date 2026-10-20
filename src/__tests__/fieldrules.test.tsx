@@ -120,3 +120,105 @@ describe('dates', () => {
     expectReported(EXPIRY_FORMAT_RULE, '2030-01-01');
   });
 });
+
+describe('countries', () => {
+  const countryFields: [Column, string][] = [
+    ['Nationality', 'Nationality must match one of the valid dropdown options exactly.'],
+    ['Country', 'Country must match one of the valid dropdown options exactly.'],
+    ['Passport Issuing Country', 'Passport Issuing Country must match one of the valid dropdown options exactly.'],
+  ];
+
+  it.each(countryFields)('accepts a %s by name or two-letter code, in any letter case', async (column) => {
+    for (const value of ['Canada', 'united states', 'US', 'gb', 'Côte d’Ivoire', "Cote d'Ivoire"]) {
+      const { unmount } = await checkRow({ [column]: value });
+      expectPassed();
+      unmount();
+    }
+  });
+
+  it.each(countryFields)('reports a %s that is not a country', async (column, rule) => {
+    await checkRow({ [column]: 'Narnia' });
+    expectReported(rule, 'Narnia');
+  });
+});
+
+describe('State/Province', () => {
+  const STATE_RULE = 'State must match one of the valid dropdown options.';
+
+  it.each([
+    ['US', 'NY'],
+    ['United States', 'new york'],
+    ['us', 'District of Columbia'],
+    ['CA', 'ON'],
+    ['Canada', 'Quebec'],
+  ])('accepts a %s state or province of %s', async (country, state) => {
+    await checkRow({ Country: country, 'State/Province': state });
+    expectPassed();
+  });
+
+  it.each([
+    ['US', 'Ontario'],
+    ['Canada', 'NY'],
+    ['US', 'Nowhere'],
+  ])('reports a %s state or province of %s', async (country, state) => {
+    await checkRow({ Country: country, 'State/Province': state });
+    expectReported(STATE_RULE, state);
+  });
+
+  it('does not check the State/Province of another country, or of a row with no Country', async () => {
+    const other = await checkRow({ Country: 'France', 'State/Province': 'Île-de-France' });
+    expectPassed();
+    other.unmount();
+
+    await checkRow({ 'State/Province': 'Anywhere' });
+    expectPassed();
+  });
+});
+
+describe('Zip/Postal Code', () => {
+  const ZIP_RULE =
+    'Zip Code must match the required format for the selected country (e.g., 12345 or 12345-6789 for US, A1A 1A1 for Canada).';
+
+  it.each([
+    ['US', '12345'],
+    ['United States', '12345-6789'],
+    ['CA', 'K1A 0B1'],
+    ['Canada', 'k1a 0b1'],
+    ['France', '75001'],
+    ['', 'anything'],
+  ])('accepts a %s code of %s', async (country, zip) => {
+    await checkRow({ Country: country, 'Zip/Postal Code': zip });
+    expectPassed();
+  });
+
+  it.each([
+    ['US', '1234'],
+    ['US', '12345-678'],
+    ['US', 'ABCDE'],
+    ['CA', 'K1A0B1'],
+    ['Canada', '12345'],
+  ])('reports a %s code of %s', async (country, zip) => {
+    await checkRow({ Country: country, 'Zip/Postal Code': zip });
+    expectReported(ZIP_RULE, zip);
+  });
+});
+
+describe('address and passport lengths', () => {
+  const cases: [Column, number, string][] = [
+    ['Address Line 1', 80, 'Address 1 cannot exceed 80 characters.'],
+    ['Address Line 2', 80, 'Address Line 2 cannot exceed 80 characters.'],
+    ['City', 80, 'City cannot exceed 80 characters.'],
+    ['Passport Number', 15, 'Passport Number cannot exceed 15 characters.'],
+  ];
+
+  it.each(cases)('accepts a %s of exactly %i characters of any kind', async (column, max) => {
+    await checkRow({ [column]: '#@/'.padEnd(max, 'x') });
+    expectPassed();
+  });
+
+  it.each(cases)('reports a %s over %i characters', async (column, max, rule) => {
+    const long = 'x'.repeat(max + 1);
+    await checkRow({ [column]: long });
+    expectReported(rule, long);
+  });
+});

@@ -1,3 +1,6 @@
+import countries from '../data/countries.json';
+import states from '../data/states.json';
+
 export const MAX_EMAIL = 254;
 
 const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
@@ -86,12 +89,36 @@ const dateField = <K extends string>(
     },
   }) as const;
 
+/** A free-text field limited only by length: any character is allowed. */
+const maxLength = <K extends string>(key: K, header: string, max: number, message: string) =>
+  ({ key, header, required: false, problem: rule((v) => v.length <= max, message) }) as const;
+
+/** Compares names ignoring letter case, accents and the style of apostrophe, so "Cote d'Ivoire" matches "Côte d’Ivoire". */
+const fold = (v: string) => v.normalize('NFD').replace(/\p{M}/gu, '').replace(/[‘’]/g, "'").toLowerCase();
+
+const matches = (v: string, entry: { code: string; name: string }) =>
+  fold(v) === fold(entry.code) || fold(v) === fold(entry.name);
+
+/** The two-letter code of the country written as `v`, by name or code; null when it is not a country. */
+const countryCode = (v: string) => countries.find((c) => matches(v, c))?.code ?? null;
+
+/** A country field: an ISO country, by its English name or two-letter code. */
+const countryField = <K extends string>(key: K, header: string) =>
+  ({
+    key,
+    header,
+    required: false,
+    problem: rule((v) => countryCode(v) !== null, `${header} must match one of the valid dropdown options exactly.`),
+  }) as const;
+
+const POSTAL_CODES: Record<string, RegExp> = {
+  US: /^[0-9]{5}(-[0-9]{4})?$/,
+  CA: /^[A-Za-z][0-9][A-Za-z] [0-9][A-Za-z][0-9]$/,
+};
+
 const TITLES = oneOf('Mr', 'Mrs', 'Ms', 'Dr', 'Mstr', 'Miss');
 
 export const RELATIONSHIPS = ['Spouse', 'Partner', 'Child', 'Parent', 'Sibling', 'Friend', 'Other'];
-
-/** A column with no Format check rule yet. */
-const free = <K extends string>(key: K, header: string) => ({ key, header, required: false, problem: none }) as const;
 
 /** Every column of the Import Template, in order. The template, the File check and the Format check all read from this. */
 export const FIELDS = [
@@ -122,7 +149,7 @@ export const FIELDS = [
   nameField('lastName', 'Last Name', true, 29),
   pickList('gender', 'Gender', ['M', 'F'], "Gender must be either 'M' (Male) or 'F' (Female)."),
   dateField('dateOfBirth', 'Date of Birth', (date, now) => date <= now, 'Date of Birth cannot be a future date.'),
-  free('nationality', 'Nationality'),
+  countryField('nationality', 'Nationality'),
   pickList(
     'emailDescription',
     'Email Description',
@@ -147,14 +174,35 @@ export const FIELDS = [
     required: false,
     problem: rule((v) => /^[0-9]{10,15}$/.test(v), 'Phone Number must contain 10 to 15 digits, numbers only.'),
   },
-  free('address1', 'Address Line 1'),
-  free('address2', 'Address Line 2'),
-  free('city', 'City'),
-  free('state', 'State/Province'),
-  free('zip', 'Zip/Postal Code'),
-  free('country', 'Country'),
-  free('passportNumber', 'Passport Number'),
-  free('passportCountry', 'Passport Issuing Country'),
+  maxLength('address1', 'Address Line 1', 80, 'Address 1 cannot exceed 80 characters.'),
+  maxLength('address2', 'Address Line 2', 80, 'Address Line 2 cannot exceed 80 characters.'),
+  maxLength('city', 'City', 80, 'City cannot exceed 80 characters.'),
+  {
+    key: 'state',
+    header: 'State/Province',
+    required: false,
+    // Checked only for the US and Canada; elsewhere, or with no Country, any State/Province is accepted.
+    problem: (v: string, row: Cells) => {
+      const country = countryCode(row.country);
+      if (country !== 'US' && country !== 'CA') return null;
+      const valid = states.some((s) => s.country === country && matches(v, s));
+      return valid ? null : 'State must match one of the valid dropdown options.';
+    },
+  },
+  {
+    key: 'zip',
+    header: 'Zip/Postal Code',
+    required: false,
+    // Checked only for the US and Canada; elsewhere, or with no Country, any code is accepted.
+    problem: (v: string, row: Cells) => {
+      const pattern = POSTAL_CODES[countryCode(row.country) ?? ''];
+      if (!pattern || pattern.test(v)) return null;
+      return 'Zip Code must match the required format for the selected country (e.g., 12345 or 12345-6789 for US, A1A 1A1 for Canada).';
+    },
+  },
+  countryField('country', 'Country'),
+  maxLength('passportNumber', 'Passport Number', 15, 'Passport Number cannot exceed 15 characters.'),
+  countryField('passportCountry', 'Passport Issuing Country'),
   dateField(
     'passportExpiry',
     'Passport Expiry Date',

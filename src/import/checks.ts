@@ -149,12 +149,16 @@ function crossRowCheck(rows: Row[]): RuleError[] {
 
 /** The Format check: the content of each filled-in cell, run only once the File check has passed. */
 function formatCheck(rows: Row[]): RuleError[] {
-  return FIELDS.map((field, c) => ({
-    rule: field.message,
-    rows: rows
-      .filter(({ cells }) => cells[c] !== '' && !field.isValid(cells[c]))
-      .map(({ row, cells }) => ({ row, value: cells[c] })),
-  })).filter((e) => e.rows.length > 0);
+  // One group per message, in column order; a field with two messages (such as a date) can give two groups.
+  const groups = new Map<string, RuleError['rows']>();
+  FIELDS.forEach((field, c) => {
+    for (const { row, cells, record } of rows) {
+      if (cells[c] === '') continue;
+      const message = field.problem(cells[c], record);
+      if (message) groups.set(message, [...(groups.get(message) ?? []), { row, value: cells[c] }]);
+    }
+  });
+  return [...groups].map(([rule, offenders]) => ({ rule, rows: offenders }));
 }
 
 function toRecord(cells: string[]): ImportRow {

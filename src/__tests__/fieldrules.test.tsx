@@ -8,9 +8,13 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+/** The admin's date while these tests run: 20 October 2026, local time. */
+const TODAY = new Date(2026, 9, 20, 9, 30);
+
 /** Uploads one Client row with `cells` filled in for Sarah Brown, and lets both checks finish. */
 async function checkRow(cells: Partial<Record<Column, string>>) {
   const view = renderClientsPage({ service: createFakeService() });
+  vi.setSystemTime(TODAY);
   await openAsSarah(view.user);
   await addFile(view.user, csvFile([HEADER, client(1, 'Jane', 'Doe', 'jane@example.com', cells)]));
   await view.user.click(screen.getByRole('button', { name: 'Continue' }));
@@ -77,4 +81,42 @@ describe('Primary Phone Number', () => {
       expectReported(PHONE_RULE, phone);
     },
   );
+});
+
+describe('dates', () => {
+  const BIRTH_FORMAT_RULE = 'Date of Birth must be a real date in MM/DD/YYYY format.';
+  const EXPIRY_FORMAT_RULE = 'Passport Expiry Date must be a real date in MM/DD/YYYY format.';
+
+  it.each(['10/20/2026', '02/29/2024', '1/5/1990', '12/31/1950'])('accepts a Date of Birth of %s', async (date) => {
+    await checkRow({ 'Date of Birth': date });
+    expectPassed();
+  });
+
+  it('reports a Date of Birth after today', async () => {
+    await checkRow({ 'Date of Birth': '10/21/2026' });
+    expectReported('Date of Birth cannot be a future date.', '10/21/2026');
+  });
+
+  it.each(['02/30/1990', '02/29/2023', '13/01/1990', '1990-02-01', '01/02/90', 'tomorrow'])(
+    'reports a Date of Birth of %s as not a real MM/DD/YYYY date',
+    async (date) => {
+      await checkRow({ 'Date of Birth': date });
+      expectReported(BIRTH_FORMAT_RULE, date);
+    },
+  );
+
+  it.each(['10/20/2026', '01/01/2035'])('accepts a Passport Expiry Date of %s', async (date) => {
+    await checkRow({ 'Passport Expiry Date': date });
+    expectPassed();
+  });
+
+  it('reports a Passport Expiry Date before today', async () => {
+    await checkRow({ 'Passport Expiry Date': '10/19/2026' });
+    expectReported("Passport Expiry Date cannot be before today's date.", '10/19/2026');
+  });
+
+  it('reports a Passport Expiry Date that is not a real MM/DD/YYYY date', async () => {
+    await checkRow({ 'Passport Expiry Date': '2030-01-01' });
+    expectReported(EXPIRY_FORMAT_RULE, '2030-01-01');
+  });
 });

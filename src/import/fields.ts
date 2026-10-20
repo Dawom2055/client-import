@@ -2,7 +2,8 @@ export const MAX_EMAIL = 254;
 
 const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 
-export const EMAIL_RULE = `Email Address must be a valid email address of ${MAX_EMAIL} characters or fewer.`;
+export const EMAIL_RULE =
+  "Email Address must contain an '@' symbol, and any '.' must be followed by additional characters.";
 
 const validEmail = (v: string) => v.length <= MAX_EMAIL && EMAIL_PATTERN.test(v);
 
@@ -37,6 +38,12 @@ const nameField = <K extends string>(key: K, header: string, required: boolean, 
     message: `${label} must be ${max} characters or fewer and can only contain letters, spaces, and - ' . , characters.`,
   }) as const;
 
+/** A pick-list field that is never required. */
+const pickList = <K extends string>(key: K, header: string, options: string[], message: string) =>
+  ({ key, header, required: false, isValid: oneOf(...options), message }) as const;
+
+const TITLES = oneOf('Mr', 'Mrs', 'Ms', 'Dr', 'Mstr', 'Miss');
+
 export const RELATIONSHIPS = ['Spouse', 'Partner', 'Child', 'Parent', 'Sibling', 'Friend', 'Other'];
 
 /** A column with no Format check rule yet. */
@@ -46,13 +53,12 @@ const free = <K extends string>(key: K, header: string) =>
 /** Every column of the Import Template, in order. The template, the File check and the Format check all read from this. */
 export const FIELDS = [
   { key: 'group', header: 'Group #', required: true, isValid: anything, message: '' },
-  {
-    key: 'relationship',
-    header: 'Relationship to Client',
-    required: false,
-    isValid: oneOf(...RELATIONSHIPS),
-    message: `Relationship to Client must be one of: ${RELATIONSHIPS.join(', ')}.`,
-  },
+  pickList(
+    'relationship',
+    'Relationship to Client',
+    RELATIONSHIPS,
+    `Relationship to Client must be one of: ${RELATIONSHIPS.join(', ')}.`,
+  ),
   {
     key: 'profileType',
     header: 'Profile Type',
@@ -60,18 +66,41 @@ export const FIELDS = [
     isValid: oneOf('L', 'C'),
     message: "Profile Type must be either 'L' (Leisure) or 'C' (Corporate).",
   },
-  free('title', 'Title'),
+  {
+    key: 'title',
+    header: 'Title',
+    required: false,
+    // The period after a title is optional: "Mr" and "Mr." both match.
+    isValid: (v: string) => TITLES(v.replace(/\.$/, '')),
+    message: 'Title must be one of: Mr., Mrs., Ms., Dr., Mstr, or Miss',
+  },
   nameField('corporateName', 'Corporate Name', false, 20, 'Corporate name'),
   nameField('firstName', 'First Name', true, 20),
   nameField('middleName', 'Middle Name', false, 30),
   nameField('lastName', 'Last Name', true, 29),
-  free('gender', 'Gender'),
+  pickList('gender', 'Gender', ['M', 'F'], "Gender must be either 'M' (Male) or 'F' (Female)."),
   free('dateOfBirth', 'Date of Birth'),
   free('nationality', 'Nationality'),
-  free('emailDescription', 'Email Description'),
+  pickList(
+    'emailDescription',
+    'Email Description',
+    ['Personal', 'Work'],
+    "Email Description must be either 'Personal' or 'Work'.",
+  ),
   { key: 'email', header: 'Email Address', required: true, isValid: validEmail, message: EMAIL_RULE },
-  free('phoneDescription', 'Phone Description'),
-  free('phone', 'Primary Phone Number'),
+  pickList(
+    'phoneDescription',
+    'Phone Description',
+    ['Home', 'Work', 'Cell'],
+    "Phone Description must be 'Home', 'Work', or 'Cell'.",
+  ),
+  {
+    key: 'phone',
+    header: 'Primary Phone Number',
+    required: false,
+    isValid: (v: string) => /^[0-9]{10,15}$/.test(v),
+    message: 'Phone Number must contain 10 to 15 digits, numbers only.',
+  },
   free('address1', 'Address Line 1'),
   free('address2', 'Address Line 2'),
   free('city', 'City'),

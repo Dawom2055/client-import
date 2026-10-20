@@ -10,7 +10,7 @@ afterEach(() => {
 
 const NAME_RULE = (field: string, max: number) =>
   `${field} must be ${max} characters or fewer and can only contain letters, spaces, and - ' . , characters.`;
-const EMAIL_RULE = 'Email Address must be a valid email address of 254 characters or fewer.';
+const EMAIL_RULE = "Email Address must contain an '@' symbol, and any '.' must be followed by additional characters.";
 const JANE = client(1, 'Jane', 'Doe', 'jane@example.com');
 
 /** Uploads `file` for Sarah Brown and lets both checks finish. */

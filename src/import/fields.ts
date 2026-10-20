@@ -29,6 +29,19 @@ const oneOf =
   (v: string) =>
     options.some((o) => o.toLowerCase() === v.toLowerCase());
 
+/** Letters A to Z, spaces and - ' . , only, as ADX's own name fields allow. */
+const NAME_CHARACTERS = /^[A-Za-z \-'.,]+$/;
+
+/** A name of at most `max` characters, with the error message written for `label`. */
+const nameField = <K extends string>(key: K, header: string, required: boolean, max: number, label = header) =>
+  ({
+    key,
+    header,
+    required,
+    isValid: (v: string) => v.length <= max && NAME_CHARACTERS.test(v),
+    message: `${label} must be ${max} characters or fewer and can only contain letters, spaces, and - ' . , characters.`,
+  }) as const;
+
 export const RELATIONSHIPS = ['Spouse', 'Partner', 'Child', 'Parent', 'Sibling', 'Friend', 'Other'];
 
 /** A column with no Format check rule yet. */
@@ -45,9 +58,15 @@ export const FIELDS = [
     isValid: oneOf(...RELATIONSHIPS),
     message: `Relationship to Client must be one of: ${RELATIONSHIPS.join(', ')}.`,
   },
-  { key: 'profileType', header: 'Profile Type', required: true, isValid: anything, message: '' },
+  {
+    key: 'profileType',
+    header: 'Profile Type',
+    required: true,
+    isValid: oneOf('L', 'C'),
+    message: "Profile Type must be either 'L' (Leisure) or 'C' (Corporate).",
+  },
   free('title', 'Title'),
-  free('corporateName', 'Corporate Name'),
+  nameField('corporateName', 'Corporate Name', false, 20, 'Corporate name'),
   { key: 'firstName', header: 'First Name', required: true, isValid: validName, message: nameRule('First Name') },
   free('middleName', 'Middle Name'),
   { key: 'lastName', header: 'Last Name', required: true, isValid: validName, message: nameRule('Last Name') },

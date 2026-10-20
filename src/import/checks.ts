@@ -13,6 +13,10 @@ export const GROUP_NUMBER_RULE = 'Group # must be a whole number of 1 or more.';
 export const ONE_CLIENT_RULE = 'Each Group must have only one Client.';
 export const NO_CLIENT_RULE =
   'Each Group must have a Client. Companions must share a Group # with one row that has no Relationship to Client.';
+export const PROFILE_MATCH_RULE = 'Companions must have the same Profile Type as the Client in their Group.';
+export const CORPORATE_REQUIRED_RULE = "Corporate Name is required when Profile Type is 'C' (Corporate).";
+export const COMPANION_CORPORATE_RULE = 'Corporate Name must be blank for Companions.';
+export const LEISURE_CORPORATE_RULE = "Corporate Name must be blank when Profile Type is 'L' (Leisure).";
 export const UNREADABLE_MESSAGE = 'The file could not be read.';
 export const MALFORMED_MESSAGE = 'The file is not a valid CSV.';
 
@@ -82,8 +86,14 @@ interface Row {
 
 const isGroupNumber = (v: string) => /^[0-9]+$/.test(v) && Number(v) >= 1;
 
-/** The File check's Group rules: every Group has exactly one Client row. Every row of a failing Group is reported. */
-function groupCheck(rows: Row[]): RuleError[] {
+const profileType = (r: Row) => r.record.profileType.toUpperCase();
+const hasProfileType = (r: Row) => profileType(r) === 'L' || profileType(r) === 'C';
+
+/**
+ * The File check's rules across rows: every Group has exactly one Client row, a Companion shares its Client's
+ * Profile Type, and only a Corporate Client row carries a Corporate Name. Every row of a failing Group is reported.
+ */
+function crossRowCheck(rows: Row[]): RuleError[] {
   const groups = new Map<number, Row[]>();
   for (const r of rows) {
     if (!isGroupNumber(r.record.group)) continue;
@@ -97,6 +107,21 @@ function groupCheck(rows: Row[]): RuleError[] {
       .sort((a, b) => a.row - b.row);
   const clientCount = (members: Row[]) => members.filter((m) => m.record.kind === 'client').length;
 
+  // Profile Types are compared only within a Group whose single Client row is known.
+  const mismatched = [...groups.values()]
+    .filter((members) => clientCount(members) === 1)
+    .flatMap((members) => {
+      const owner = members.find((m) => m.record.kind === 'client')!;
+      if (!hasProfileType(owner)) return [];
+      return members.filter((m) => m !== owner && hasProfileType(m) && profileType(m) !== profileType(owner));
+    })
+    .sort((a, b) => a.row - b.row)
+    .map(({ row, record }) => ({ row, value: record.profileType }));
+
+  const clientRows = rows.filter((r) => r.record.kind === 'client');
+  const withCorporateName = (r: Row) => r.record.corporateName !== '';
+  const corporateNameOf = ({ row, record }: Row) => ({ row, value: record.corporateName });
+
   return [
     {
       rule: GROUP_NUMBER_RULE,
@@ -106,6 +131,19 @@ function groupCheck(rows: Row[]): RuleError[] {
     },
     { rule: ONE_CLIENT_RULE, rows: offenders((m) => clientCount(m) > 1) },
     { rule: NO_CLIENT_RULE, rows: offenders((m) => clientCount(m) === 0) },
+    { rule: PROFILE_MATCH_RULE, rows: mismatched },
+    {
+      rule: CORPORATE_REQUIRED_RULE,
+      rows: clientRows.filter((r) => profileType(r) === 'C' && !withCorporateName(r)).map(({ row }) => ({ row })),
+    },
+    {
+      rule: COMPANION_CORPORATE_RULE,
+      rows: rows.filter((r) => r.record.kind === 'companion' && withCorporateName(r)).map(corporateNameOf),
+    },
+    {
+      rule: LEISURE_CORPORATE_RULE,
+      rows: clientRows.filter((r) => profileType(r) === 'L' && withCorporateName(r)).map(corporateNameOf),
+    },
   ].filter((e) => e.rows.length > 0);
 }
 
@@ -163,7 +201,7 @@ export function checkImportFile(text: string): ValidationResult {
   const errors: RuleError[] = [];
   if (missing.length > 0) errors.push({ rule: REQUIRED_RULE, rows: missing });
   if (duplicates.length > 0) errors.push({ rule: DUPLICATE_RULE, rows: duplicates });
-  errors.push(...groupCheck(rows));
+  errors.push(...crossRowCheck(rows));
   if (errors.length > 0) return { ok: false, check: 'file', errors };
 
   const formatErrors = formatCheck(rows);

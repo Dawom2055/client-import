@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FailedRecord, ImportClient, RuleError } from './types';
+import type { FailedRecord, ImportRow, RuleError } from './types';
 
 const PREVIEW_ROWS = 10;
 
@@ -13,12 +13,12 @@ export function RunningScreen({ message }: { message: string }) {
 }
 
 export function ReviewScreen({
-  clients,
+  rows,
   advisorName,
   onCancel,
   onConfirm,
 }: {
-  clients: ImportClient[];
+  rows: ImportRow[];
   advisorName: string;
   onCancel: () => void;
   onConfirm: () => void;
@@ -31,24 +31,30 @@ export function ReviewScreen({
         ready, click ‘Finalize and Upload’ to proceed.
       </p>
       <div className="panel review-panel">
-        <strong>Total records: {clients.length}</strong>
+        <strong>Total records: {rows.length}</strong>
         <div className="review-scroll">
           <table className="review-table" aria-label="Clients to create">
             <thead>
               <tr>
                 <th scope="col">#</th>
+                <th scope="col">Group #</th>
+                <th scope="col">Relationship to Client</th>
+                <th scope="col">Corporate Name</th>
                 <th scope="col">First Name</th>
                 <th scope="col">Last Name</th>
                 <th scope="col">Email Address</th>
               </tr>
             </thead>
             <tbody>
-              {clients.map((c, i) => (
+              {rows.map((r, i) => (
                 <tr key={i}>
                   <td>{i + 1}</td>
-                  <td>{c.firstName}</td>
-                  <td>{c.lastName}</td>
-                  <td>{c.email}</td>
+                  <td>{r.group}</td>
+                  <td>{r.relationship}</td>
+                  <td>{r.corporateName}</td>
+                  <td>{r.firstName}</td>
+                  <td>{r.lastName}</td>
+                  <td>{r.email}</td>
                 </tr>
               ))}
             </tbody>

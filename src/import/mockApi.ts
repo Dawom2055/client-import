@@ -31,10 +31,10 @@ export function createMockImportService(getScenario: () => Scenario): ImportServ
     },
 
     async create(file, _advisor, rows) {
-      if (pickScenario(file, getScenario()) !== 'partial') return { created: rows, failed: [] };
-      const failedCount = Math.min(3, rows);
+      if (pickScenario(file, getScenario()) !== 'partial') return { created: rows.length, failed: [] };
+      const failedCount = Math.min(3, rows.length);
       return {
-        created: rows - failedCount,
+        created: rows.length - failedCount,
         failed: Array.from({ length: failedCount }, (_, i) => ({
           row: 5 + i * 7,
           name: ['John Smith', 'Mary Jones', 'Wei Zhang'][i],

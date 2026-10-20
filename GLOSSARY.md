@@ -16,11 +16,25 @@ _Avoid_: Agent
 A traveller profile owned by an Advisor.
 
 **Companion**:
-A Client who travels with, and is linked to, another Client through a relationship such as husband, wife or daughter. Client Import does not create Companions yet: the Import Template has no way to link one to a Client.
+A Client who travels with, and is linked to, another Client through a relationship such as husband, wife or daughter. In a Client Import, a Companion is linked to the Client in the same Group.
 _Avoid_: Traveller, dependant
 
+**Group**:
+A set of rows in one Import File that share a Group number: exactly one Client row and any number of Companion rows. Each Companion row is linked to the Group's Client. A Client with no Companions is a Group of one.
+
+**Profile Type**:
+Whether a Client is Leisure (`L`) or Corporate (`C`). A Corporate Client row names its company in Corporate Name and need not name a person; Companion rows never carry a Corporate Name and always name a person.
+
+**Client row**:
+A row in the Import File with no Relationship to Client. It creates a Client.
+_Avoid_: Client upload
+
+**Companion row**:
+A row in the Import File with a Relationship to Client. It creates a Companion linked to the Client row in the same Group.
+_Avoid_: Companion upload
+
 **Import Template**:
-The CSV template downloadable from the modal. Its header row is exactly `First Name,Last Name,Email Address`, and each row after it is one Client.
+The CSV template downloadable from the modal. Its header row lists every column the import accepts, with required columns marked `*`; each row after it is one Client row or Companion row.
 _Avoid_: Client template, Companion template
 
 **Import File**:
@@ -33,10 +47,10 @@ The outcome when the Import File fails either check. The whole file is rejected,
 The outcome when every row passed validation but some Clients failed to be created. The created Clients are kept and the failures are reported.
 
 **File check**:
-The first check, Step 2. Fails the file if the headers are not the Import Template's, the file is empty, a required field is blank, or an Email Address appears more than once in the file. Every occurrence of a duplicate is reported.
+The first check, Step 2. Checks the shape of the Import File: its headers, that it has rows, that required fields are filled, that no Email Address repeats, and that every Group has exactly one Client row.
 
 **Format check**:
-The second check, Step 3, run only if the File check passed. Fails the file if a name is over 50 characters or has characters other than letters, spaces and `- ' . ,`, or an Email Address is not a valid address of up to 254 characters.
+The second check, Step 3, run only if the File check passed. Checks each filled-in cell against its field's own rule, such as a length limit, allowed characters, a date format or a list of allowed values.
 
 **Review**:
 Step 4, shown after both checks pass. Lists every Client in the Import File with its Advisor so the admin can confirm before anything is created.

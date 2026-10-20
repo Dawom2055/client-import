@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { AdvisorSearch } from './AdvisorSearch';
-import { fileFailure, UNREADABLE_MESSAGE } from './checks';
+import { fileFailure, HEADERS, UNREADABLE_MESSAGE } from './checks';
 import { Dropzone } from './Dropzone';
 import { InvalidScreen, PartialScreen, ReviewScreen, RunningScreen, SuccessScreen } from './screens';
 import type {
   Advisor,
   Check,
   CreateResult,
-  ImportClient,
+  ImportRow,
   ImportService,
   Phase,
   RuleError,
@@ -38,7 +38,7 @@ const RUN_TEXT: Partial<Record<Phase, string>> = {
   create: 'Creating clients…',
 };
 
-const TEMPLATE = 'First Name,Last Name,Email Address\n';
+const TEMPLATE = `${HEADERS.join(',')}\n`;
 
 function downloadTemplate() {
   const url = URL.createObjectURL(new Blob([TEMPLATE], { type: 'text/csv' }));
@@ -53,7 +53,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>('select');
   const [advisor, setAdvisor] = useState<Advisor | null>(initialAdvisor);
   const [file, setFile] = useState<File | null>(null);
-  const [clients, setClients] = useState<ImportClient[]>([]);
+  const [rows, setRows] = useState<ImportRow[]>([]);
   const [errors, setErrors] = useState<RuleError[]>([]);
   const [failedCheck, setFailedCheck] = useState<Check>('file');
   const [result, setResult] = useState<CreateResult | null>(null);
@@ -70,7 +70,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
     setPhase('select');
     setAdvisor(initialAdvisor);
     setFile(null);
-    setClients([]);
+    setRows([]);
     setErrors([]);
     setResult(null);
   };
@@ -107,7 +107,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
         } else if (phase === 'file') {
           setPhase('format');
         } else {
-          setClients(outcome.ok ? outcome.clients : []);
+          setRows(outcome.ok ? outcome.rows : []);
           setPhase('confirm');
         }
       } else {
@@ -131,7 +131,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
 
   const confirm = () => {
     if (!file || !advisor) return;
-    creation.current = service.create(file, advisor, clients.length);
+    creation.current = service.create(file, advisor, rows);
     setPhase('create');
   };
 
@@ -198,7 +198,11 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
             />
             <div className="field">
               <span className="field-label">Clients</span>
-              <p className="hint">Use the template to list each Client's name and email address, one Client per row.</p>
+              <p className="hint">
+                Use the template to list one Client or Companion per row. Rows with the same Group # travel together:
+                one Client row, with Relationship to Client left blank, and any Companion rows. A Corporate Client row
+                needs only a Corporate Name; its Companions still need a First and Last Name.
+              </p>
               <button type="button" className="link-btn with-icon" onClick={downloadTemplate}>
                 <span aria-hidden>⤓</span> Download Import Template
               </button>
@@ -218,7 +222,7 @@ export function ClientImportModal({ initialAdvisor, service, onClose }: Props) {
         {(phase === 'file' || phase === 'format' || phase === 'create') && <RunningScreen message={RUN_TEXT[phase]!} />}
 
         {phase === 'confirm' && advisor && (
-          <ReviewScreen clients={clients} advisorName={advisor.name} onCancel={onClose} onConfirm={confirm} />
+          <ReviewScreen rows={rows} advisorName={advisor.name} onCancel={onClose} onConfirm={confirm} />
         )}
 
         {phase === 'invalid' && <InvalidScreen errors={errors} onBack={reset} />}
